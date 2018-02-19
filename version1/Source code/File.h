@@ -44,10 +44,7 @@ public:
 	Record* GetRecord(int offset);
 
 	// Get the immediately next record
-	Record* GetNextRecord(bool advance);
-
-	// Position the record pointer to the given offset
-	void positionRecordPointer(int offset);
+	Record* GetNextRecord();
 
 	//getter for numRecs
 	int GetNumRecs();

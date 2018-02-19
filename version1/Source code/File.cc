@@ -168,13 +168,6 @@ int Page :: GetNumRecs(){
 	return numRecs;
 }
 
-void Page::positionRecordPointer(int offset){
-	myRecs->MoveToStart();
-	for(int i = 0; i < offset-1; i++){
-		myRecs->Advance();
-	}
-}
-
 Record* Page :: GetRecord(int offset){
 
 	myRecs->MoveToStart();
@@ -186,11 +179,11 @@ Record* Page :: GetRecord(int offset){
 
 }
 
-Record* Page :: GetNextRecord(bool advance){
+Record* Page :: GetNextRecord(){
 
 	// cout << "getting record with offset: " << offset << endl;
-	if(advance)
-		myRecs->Advance();
+	myRecs->Advance();
+
 	// cout << "pointer advanced\n";
 	Record* temp = myRecs->Current(0);
 	// cout << "got record\n";

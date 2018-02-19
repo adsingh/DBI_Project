@@ -17,7 +17,6 @@
 
 DBFile::DBFile () {
     prevState = start;  
-    advance = false; 
 }
 
 // Used to parse the file path and extract the name of table (eg. filepath = heapfiles/Customer.bin; output string = Customer)
@@ -126,7 +125,7 @@ int DBFile::Open (const char *f_path) {
 
     // Getting the current Page
     myFile.GetPage(&myPage, currentPageNo);
-
+    gettingRecordForFirstTime = true;
     
     return 1;
 }
@@ -134,20 +133,10 @@ int DBFile::Open (const char *f_path) {
 void DBFile::MoveFirst () {
 
     currRecordNo = 1;
-
-    // Setting the record pointer to its correct position in the page
-
-    vector<int>::iterator it = lower_bound(pageSizesArr.begin(), pageSizesArr.end(), currRecordNo);
-    off_t pageNo = it - pageSizesArr.begin();
-    int offsetInPage = (pageNo > 0 ? currRecordNo - pageSizesArr[pageNo - 1] : currRecordNo) - 1;
-    if(currentPageNo == pageNo){
-        // cout << "Pointer positioned corectly\n";
-        myPage.positionRecordPointer(offsetInPage);
-    }
-    advance = false;
 }
 
 int DBFile::Close () {
+    
     // Last Page has not been written
     if (currentPageNo == totalPages) {
         
@@ -276,10 +265,8 @@ int DBFile::GetNext (Record &fetchme) {
         case getnext:
 
             // Record was read from the same page, hence just get the next record
-            if(currentPageNo == pageNo){
-                
-                rec = myPage.GetNextRecord(advance);
-                advance = true;
+            if(currentPageNo == pageNo && !gettingRecordForFirstTime){
+                rec = myPage.GetNextRecord();
             }
             else{
 
@@ -299,6 +286,7 @@ int DBFile::GetNext (Record &fetchme) {
     fetchme.Copy(rec);
     prevState = getnext;
     currRecordNo++;
+    gettingRecordForFirstTime = false;
     return 1;
 
 }

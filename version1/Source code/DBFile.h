@@ -27,7 +27,7 @@ class DBFile {
         vector<int> pageSizesArr;
         state prevState;
 		string configFile_name;
-		bool advance;
+		bool gettingRecordForFirstTime;
 		string GetFileName(const char* f_path);
 
 public:
