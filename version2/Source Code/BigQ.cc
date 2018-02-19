@@ -36,12 +36,25 @@ BigQ :: BigQ (Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
 void *BigQ :: externalSortWorker(void* args){
 
 	thread_data* worker_args = (thread_data *) args;
-
+	DBFile file;
+	file.Create("sortedRuns.bin", heap, NULL);
 	Record currentRecord;
 	Page* page = new Page();
 	vector<Record> recordArray;
 
 	int currentNoOfPages = 0;
+	int currentPageSize = sizeof(int);
+
+	struct Comparator {
+		OrderMaker orderMaker;
+		ComparisonEngine cnf;
+		Comparator(OrderMaker orderMaker) {this->orderMaker = orderMaker;}
+
+		bool operator () (Record i, Record j) {
+			return this->cnf.Compare(&i, &j, &(this->orderMaker)) > 0 ? true : false;
+		}
+
+	};
 
 	// Continue until the pipe is not done
 	while(worker_args->in->Remove(&currentRecord)){
@@ -50,18 +63,47 @@ void *BigQ :: externalSortWorker(void* args){
 		//currentNoOfPages < worker_args->runlen
 		int insertStatus = page->Append(&currentRecord);
 		
+		
 		// Check if page is full
 		if(insertStatus == 0){
 			page->EmptyItOut();
-			page->Append(&currentRecord);
 			currentNoOfPages++;
+			page->Append(&currentRecord);
 		}
 
+		Schema s("catalog", "customer");
+		if(currentNoOfPages == worker_args->runlen) {
+			Record lastRecord = recordArray[recordArray.size() - 1];
+			sort(recordArray.begin(), recordArray.end(), Comparator(worker_args->sortorder));
+			file.Open("sortedRuns.bin");
+			// Excluding last record
+			for(int i = 0 ; i < recordArray.size() - 1; i++) {
+				recordArray[i].Print(&s);
+				file.Add(recordArray[i]);
+			}
+			file.Close();
+			recordArray.clear();
+			recordArray.push_back(lastRecord);
+			currentNoOfPages = 0;
+
+		}
+
+	}
+
+	if(recordArray.size() > 0) {
+		sort(recordArray.begin(), recordArray.end(), Comparator(worker_args->sortorder));
+		file.Open("sortedRuns.bin");
+		for(int i = 0 ; i < recordArray.size() ; i++) {
+			file.Add(recordArray[i]);
+		}
+		file.Close();
+		recordArray.clear();
 	}
 
 	cout << "Hello, I am worker thread with runlen = " << worker_args->runlen << endl;
 
 }
+
 
 BigQ::~BigQ () {
 }
