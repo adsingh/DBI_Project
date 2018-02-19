@@ -18,7 +18,7 @@ private:
 	typedef struct{
 		Pipe* in;
 		Pipe* out;
-		OrderMaker sortorder;
+		OrderMaker* sortorder;
 		int runlen;
 	}thread_data;
 

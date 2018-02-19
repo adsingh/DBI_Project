@@ -29,6 +29,7 @@ void *producer (void *arg) {
 	dbfile.MoveFirst ();
 
 	while (dbfile.GetNext (temp) == 1) {
+		
 		counter += 1;
 		if (counter%100000 == 0) {
 			 cerr << " producer: " << counter << endl;	
@@ -101,6 +102,9 @@ void test1 (int option, int runlen) {
 	// sort order for records
 	OrderMaker sortorder;
 	rel->get_sort_order (sortorder);
+	
+	cout << "Printing from main:\n";
+	sortorder.Print();
 
 	int buffsz = 100; // pipe cache size
 	Pipe input (buffsz);
@@ -124,6 +128,7 @@ void test1 (int option, int runlen) {
 	BigQ bq (input, output, sortorder, runlen);
 
 	pthread_join (thread1, NULL);
+	cout << "Processing finished\n";
 	// pthread_join (thread2, NULL);
 }
 

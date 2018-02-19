@@ -24,8 +24,8 @@ using namespace std;
 // make sure that the information below is correct
 
 char *catalog_path = "catalog"; 
-char *tpch_dir ="/Users/ajinkyagaikwad/Documents/DBI-project/tpch-dbgen/"; // dir where dbgen tpch files (extension *.tbl) can be found
-char *dbfile_dir = ""; 
+char *tpch_dir ="/home/asiglani/DBI_temp/tpch-dbgen/"; // dir where dbgen tpch files (extension *.tbl) can be found
+char *dbfile_dir = "/home/asiglani/DBI_Project/version1/Source code/heap_files/"; 
 
 
 extern "C" {
