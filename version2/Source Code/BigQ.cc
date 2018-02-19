@@ -1,5 +1,6 @@
 #include "BigQ.h"
 #include <unistd.h>
+#include <vector>
 
 
 BigQ :: BigQ (Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
@@ -35,6 +36,29 @@ BigQ :: BigQ (Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
 void *BigQ :: externalSortWorker(void* args){
 
 	thread_data* worker_args = (thread_data *) args;
+
+	Record currentRecord;
+	Page* page = new Page();
+	vector<Record> recordArray;
+
+	int currentNoOfPages = 0;
+
+	// Continue until the pipe is not done
+	while(worker_args->in->Remove(&currentRecord)){
+
+		recordArray.push_back(currentRecord);
+		//currentNoOfPages < worker_args->runlen
+		int insertStatus = page->Append(&currentRecord);
+		
+		// Check if page is full
+		if(insertStatus == 0){
+			page->EmptyItOut();
+			page->Append(&currentRecord);
+			currentNoOfPages++;
+		}
+
+	}
+
 	cout << "Hello, I am worker thread with runlen = " << worker_args->runlen << endl;
 
 }
