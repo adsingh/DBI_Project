@@ -1,5 +1,6 @@
 #include "BigQ.h"
 #include <unistd.h>
+#include <vector>
 #include <list>
 #include <algorithm>
 
@@ -47,6 +48,7 @@ void *BigQ :: externalSortWorker(void* args){
 	file.Create("sortedRuns.bin", heap, NULL);
 	file.Close();
 	Page* page = new Page();
+	// vector<Record> recordArray;
 	list<Record> recordArray;
 
 	int currentNoOfPages = 0;
@@ -58,7 +60,7 @@ void *BigQ :: externalSortWorker(void* args){
 		Comparator(OrderMaker* orderMaker) {this->orderMaker = orderMaker;}
 
 		bool operator () (const Record & i, const Record & j) {
-			cout << "Sorting in proc\n";
+			//cout << "Sorting in proc\n";
 			return this->cnf.Compare((Record*)&i, (Record*)&j, (this->orderMaker)) > 0 ? true : false;
 			//return true;
 		}
@@ -66,7 +68,7 @@ void *BigQ :: externalSortWorker(void* args){
 	};
 
 	int count = 0;
-	Schema s("catalog", "nation");
+	Schema s("catalog", "orders");
 	// Continue until the pipe is not done
 	while(worker_args->in->Remove(&currentRecord)){
 
@@ -74,7 +76,7 @@ void *BigQ :: externalSortWorker(void* args){
 		count++;
 	
 		recordArray.push_back(currentRecord);
-
+		//currentRecord.Print(&s);
 		int insertStatus = page->Append(&currentRecord);
 		
 		// Check if page is full
@@ -87,20 +89,25 @@ void *BigQ :: externalSortWorker(void* args){
 
 		
 		if(currentNoOfPages == worker_args->runlen) {
-			cout << "Inside second if\n";
+
+			cout << "Inside second if\n size of record array = " << recordArray.size() <<endl;
 			Record lastRecord = recordArray.back();
 			recordArray.pop_back();
+			// sort(recordArray.begin(), recordArray.end(), Comparator(worker_args->sortorder));
 			recordArray.sort(Comparator(worker_args->sortorder));
+			cout << "List sorted\n";
 			file.Open("sortedRuns.bin");
+			cout << "File opened\n";
 			// Excluding last record
+			// vector<Record>::iterator it;
 			list<Record>::iterator it;
 			for(it = recordArray.begin() ; it != recordArray.end(); it++) {
 				(*it).Print(&s);
-				file.Add(*it);
+				//file.Add(temp);
 			}
 			file.Close();
 			recordArray.clear();
-			recordArray.push_back(lastRecord);
+			//recordArray.push_back(lastRecord);
 			currentNoOfPages = 0;
 
 		}
@@ -111,13 +118,11 @@ void *BigQ :: externalSortWorker(void* args){
 
 	if(recordArray.size() > 0) {
 		ComparisonEngine comp;
+		// sort(recordArray.begin(), recordArray.end(), Comparator(worker_args->sortorder));
 		recordArray.sort(Comparator(worker_args->sortorder));
-		// worker_args->sortorder->Print();
-		// recordArray.sort([](const Record & a, const Record & b) -> bool
-		// 					{ 
-		// 						return false; 
-		// 					});
+		
 		file.Open("sortedRuns.bin");
+		// vector<Record>::iterator it;
 		list<Record>::iterator it;
 		for(it = recordArray.begin() ; it != recordArray.end(); it++) {
 			(*it).Print(&s);
