@@ -44,11 +44,11 @@ void *BigQ :: externalSortWorker(void* args){
 	int count = 0;
 	File file_temp;
 	Page page_temp;
-	//DBFile file;
 	vector<Record*> recordArray;
 	int currentNoOfPages = 0, currentPageNo = 0;
 	int currentPageSize = sizeof(int);
 	int numberOfRuns = 0;
+	int totalPages;
 
 	struct Comparator {
 		OrderMaker* orderMaker;
@@ -56,18 +56,13 @@ void *BigQ :: externalSortWorker(void* args){
 		Comparator(OrderMaker* orderMaker) {this->orderMaker = orderMaker;}
 
 		bool operator () (const Record* i, const Record* j) {
-			//cout << "Sorting in proc\n";
 			return this->cnf.Compare((Record*)i, (Record*)j, (this->orderMaker)) > 0 ? true : false;
-			// return false;
 		}
 
 	};
 
 	file_temp.Open(0, "sortedRuns.bin");
 	file_temp.Close();
-	// file.Create("sortedRuns.bin", heap, NULL);
-	// file.Close();
-
 	
 	Schema s("catalog", "part");
 
@@ -87,32 +82,28 @@ void *BigQ :: externalSortWorker(void* args){
 			numberOfRuns++;
 			cout << "Inside second if\n size of record array = " << recordArray.size() <<endl;
 			stable_sort(recordArray.begin(), recordArray.end(), Comparator(worker_args->sortorder));
-			//recordArray.sort(Comparator(worker_args->sortorder));
+
 			cout << "List sorted\n";
-			// file.Open("sortedRuns.bin");
 			file_temp.Open(1, "sortedRuns.bin");
 			cout << "File opened\n";
+			
 			// Excluding last record
 			
-			for(auto it : recordArray) {
+			for(Record* it : recordArray) {
 				// it->Print(&s);
-				it->Print(&s);
 				if(page_temp.Append(it) == 0){
 					file_temp.AddPage(&page_temp, currentPageNo++);
 					page_temp.EmptyItOut();
 					page_temp.Append(it);
 				}
-
-				// file.Add(*it);
 			}
 			if(page_temp.GetNumRecs() > 0){
 				file_temp.AddPage(&page_temp, currentPageNo++);
 				page_temp.EmptyItOut();
 			}
-			// file.Close();
+
 			file_temp.Close();
 			recordArray.clear();
-			//recordArray.push_back(lastRecord);
 			currentNoOfPages = 0;
 
 		}
@@ -131,16 +122,14 @@ void *BigQ :: externalSortWorker(void* args){
 		stable_sort(recordArray.begin(), recordArray.end(), Comparator(worker_args->sortorder));
 		cout << "Records sorted!\n";
 
-		// file.Open("sortedRuns.bin");
 		file_temp.Open(1, "sortedRuns.bin");
-		for(auto it : recordArray) {
-			it->Print(&s);
+		for(Record* it : recordArray) {
+			// it->Print(&s);
 			if(page_temp.Append(it) == 0){
 				file_temp.AddPage(&page_temp, currentPageNo++);
 				page_temp.EmptyItOut();
 				page_temp.Append(it);
 			}
-			// file.Add(*it);
 		}
 
 		if(page_temp.GetNumRecs() > 0){
@@ -149,9 +138,24 @@ void *BigQ :: externalSortWorker(void* args){
 		}
 
 		file_temp.Close();
-		// file.Close();
 		recordArray.clear();
 	}
+	
+	
+	
+	totalPages = currentPageNo;
+	
+	// Code to verify sorted runs were added to the file properly
+
+	// file_temp.Open(1, "sortedRuns.bin");
+
+	// Record temp;
+	// for(int i = 0; i < totalPages; i++){
+	// 	file_temp.GetPage(&page_temp, i);
+	// 	while(page_temp.GetFirst(&temp) != 0)
+	// 		temp.Print(&s);
+	// }
+	// file_temp.Close();
 
 	Page* pageArr[numberOfRuns];
 	
