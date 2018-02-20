@@ -76,7 +76,6 @@ int Pipe :: Remove (Record *removeMe) {
 	// next, see if there is anything in the pipeline; if
 	// there is, then do the removal
 	if (lastSlot != firstSlot) {
-		
 		removeMe->Consume (&buffered [firstSlot % totSpace]);
 
 	// if there is not, then we need to wait until the producer
