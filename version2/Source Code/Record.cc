@@ -367,4 +367,3 @@ int Record :: GetSize(){
 	return ((int *) bits)[0];
 
 }
-

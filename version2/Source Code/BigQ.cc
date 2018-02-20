@@ -41,18 +41,13 @@ void *BigQ :: externalSortWorker(void* args){
 	
 	Record* currentRecord = new Record();
 	thread_data* worker_args = (thread_data *) args;
-	
+	int count = 0;
+	File file_temp;
 	DBFile file;
-
-	
-	file.Create("sortedRuns.bin", heap, NULL);
-	file.Close();
-	Page* page = new Page();
-	// vector<Record> recordArray;
 	vector<Record*> recordArray;
-
 	int currentNoOfPages = 0;
 	int currentPageSize = sizeof(int);
+	int numberOfRuns = 0;
 
 	struct Comparator {
 		OrderMaker* orderMaker;
@@ -62,20 +57,24 @@ void *BigQ :: externalSortWorker(void* args){
 		bool operator () (const Record* i, const Record* j) {
 			//cout << "Sorting in proc\n";
 			return this->cnf.Compare((Record*)i, (Record*)j, (this->orderMaker)) > 0 ? true : false;
-			//return true;
+			// return false;
 		}
 
 	};
 
-	int count = 0;
-	Schema s("catalog", "nation");
+	file_temp.Open(0, "sortedRuns.bin");
+	file.Create("sortedRuns.bin", heap, NULL);
+	file.Close();
+
+	
+	Schema s("catalog", "part");
 
 	// Continue until the pipe is not done
 	while(worker_args->in->Remove(currentRecord)){
 
 		
 		count++;
-
+		
 		if(currentPageSize + currentRecord->GetSize() > PAGE_SIZE){
 			currentNoOfPages++;
 			currentPageSize = sizeof(int);
@@ -83,8 +82,9 @@ void *BigQ :: externalSortWorker(void* args){
 		
 		if(currentNoOfPages == worker_args->runlen) {
 
+			numberOfRuns++;
 			cout << "Inside second if\n size of record array = " << recordArray.size() <<endl;
-			sort(recordArray.begin(), recordArray.end(), Comparator(worker_args->sortorder));
+			stable_sort(recordArray.begin(), recordArray.end(), Comparator(worker_args->sortorder));
 			//recordArray.sort(Comparator(worker_args->sortorder));
 			cout << "List sorted\n";
 			file.Open("sortedRuns.bin");
@@ -108,25 +108,33 @@ void *BigQ :: externalSortWorker(void* args){
 
 	}
 
-	cout << "Number of records read from the pipe = " << count << endl;
-
 	if(recordArray.size() > 0) {
+
+		numberOfRuns++;
 		ComparisonEngine comp;
-		sort(recordArray.begin(), recordArray.end(), Comparator(worker_args->sortorder));
-		//recordArray.sort(Comparator(worker_args->sortorder));
-		
+		cout << "Records sorting started!\n";
+		stable_sort(recordArray.begin(), recordArray.end(), Comparator(worker_args->sortorder));
+		cout << "Records sorted!\n";
+
 		file.Open("sortedRuns.bin");
 		
 		for(vector<Record*>::iterator it = recordArray.begin(); it != recordArray.end(); ++it) {
-			//cout << "Printing records\n";
-			(*it)->Print(&s);
-			//cout << "Printed records\n";
+			
 			file.Add(**it);
 		}
 		file.Close();
 		recordArray.clear();
 	}
 
+	Page* pageArr[numberOfRuns];
+	
+	for(int i = 0 ; i < numberOfRuns ; i++)
+		pageArr[i] = new Page();
+
+	
+
+	
+	cout << "Number of records read from the pipe = " << count << endl;
 	cout << "Hello, I am worker thread with runlen = " << worker_args->runlen << endl;
 
 }
