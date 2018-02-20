@@ -1,3 +1,6 @@
 *.o
 
 heap_files/
+
+.vscode/
+y.tab.c-e
