@@ -54,6 +54,7 @@ void *consumer (void *arg) {
 
 	if (t->write) {
 		sprintf (outfile, "%s.bigq", rel->path ());
+		cout << "***** " << outfile << endl;
 		dbfile.Create (outfile, heap, NULL);
 	}
 
@@ -69,6 +70,8 @@ void *consumer (void *arg) {
 
 		if (prev && last) {
 			if (ceng.Compare (prev, last, t->order) == 1) {
+				if(prev != NULL) prev->Print(rel->schema());
+				if(last != NULL) last->Print(rel->schema());
 				err++;
 			}
 			if (t->write) {
@@ -115,7 +118,7 @@ void test1 (int option, int runlen) {
 	pthread_create (&thread1, NULL, producer, (void *)&input);
 
 	// thread to read sorted data from output pipe (dumped by BigQ)
-	/*pthread_t thread2;
+	pthread_t thread2;
 	testutil tutil = {&output, &sortorder, false, false};
 	if (option == 2) {
 		tutil.print = true;
@@ -123,13 +126,13 @@ void test1 (int option, int runlen) {
 	else if (option == 3) {
 		tutil.write = true;
 	}
-	pthread_create (&thread2, NULL, consumer, (void *)&tutil);*/
+	pthread_create (&thread2, NULL, consumer, (void *)&tutil);
 
 	BigQ bq (input, output, sortorder, runlen);
 
 	pthread_join (thread1, NULL);
-	cout << "Processing finished\n";
-	// pthread_join (thread2, NULL);
+	// cout << "Processing finished\n";
+	pthread_join (thread2, NULL);
 }
 
 int main (int argc, char *argv[]) {

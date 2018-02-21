@@ -54,6 +54,8 @@ void *consumer (void *arg) {
 
 		if (prev && last) {
 			if (ceng.Compare (prev, last, t->order) == 1) {
+				if(prev != NULL) prev->Print(rel->schema());
+				if(last != NULL) last->Print(rel->schema());
 				err++;
 			}
 			if (t->write) {

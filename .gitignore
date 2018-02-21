@@ -4,3 +4,9 @@ heap_files/
 
 .vscode/
 y.tab.c-e
+
+*.txt
+*.out
+y.tab.c
+y.tab.h
+lex.yy.c

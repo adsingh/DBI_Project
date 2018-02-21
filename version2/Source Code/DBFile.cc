@@ -29,7 +29,7 @@ string DBFile::GetFileName(const char* f_path){
         temp = token;
         token = strtok(NULL, "/");
     }
-    temp = strtok(temp, ".");
+    //temp = strtok(temp, ".");
     char *file_name = (char*) malloc(sizeof(char)*100);
     strcpy(file_name, temp);
     strcat(file_name, "_config.txt");
