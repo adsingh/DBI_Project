@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <queue>
 
+using namespace std;
 
 BigQ :: BigQ (Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
 	
@@ -22,14 +23,13 @@ BigQ :: BigQ (Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
 	worker_args.sortorder = &sortorder;
 	worker_args.runlen = runlen;
 
-	cout << "Creating thread in BigQ\n";
+	// Creating Worker Thread
 	retVal = pthread_create(&worker, &attr, externalSortWorker, (void *) &worker_args);
 
 	pthread_attr_destroy(&attr);
+
+	// Wait for the worker to finish the task
 	pthread_join(worker, &status);
-	// read data from in pipe sort them into runlen pages
-    // construct priority queue over sorted runs and dump sorted data 
- 	// into the out pipe
 	
     // finally shut down the out pipe
 	out.ShutDown ();
@@ -40,23 +40,33 @@ void *BigQ :: externalSortWorker(void* args){
 	
 	
 	Record* currentRecord = new Record();
+	
 	thread_data* worker_args = (thread_data *) args;
 	if(worker_args->runlen <= 0){
 		cout << "Invalid runlength, using default value of 1\n";
 		worker_args->runlen = 1;
 	}
-	int count = 0;
-	File file_temp;
-	Page page_temp;
+	
+	int recordCount = 0;
+	
+	File file;
+	Page page;
+	
 	vector<Record*> recordArray;
+	
 	int currentNoOfPages = 0, currentPageNo = 0;
 	int currentPageSize = sizeof(int);
 	int numberOfRuns = 0;
 	int totalPages;
+	int pagesAppended = 0;
+	bool pipeEmpty;
+
+	// Vector to hold offset of runs in the file in unit of pages
 	vector<int> runOffset;
 	
 	runOffset.push_back(0);
 
+	// Comparator to compare two records
 	struct Comparator {
 		OrderMaker* orderMaker;
 		ComparisonEngine cnf;
@@ -68,93 +78,7 @@ void *BigQ :: externalSortWorker(void* args){
 
 	};
 
-	file_temp.Open(0, "sortedRuns.bin");
-	file_temp.Close();
-	
-	int pagesAppended = 0;
-
-	// Continue until the pipe is not done
-	while(worker_args->in->Remove(currentRecord)){
-
-		
-		count++;
-		
-		if(currentPageSize + currentRecord->GetSize() > PAGE_SIZE){
-
-			currentNoOfPages++;
-			//cout << "Page NO : " << currentNoOfPages << " ----  No of records = " << count - prevCnt - 1 << endl;
-			currentPageSize = sizeof(int);
-		}
-		
-		if(currentNoOfPages == worker_args->runlen) {
-
-			numberOfRuns++;
-
-			stable_sort(recordArray.begin(), recordArray.end(), Comparator(worker_args->sortorder));
-
-			file_temp.Open(1, "sortedRuns.bin");
-			
-			// Excluding last record
-			
-			for(Record* it : recordArray) {
-				if(page_temp.Append(it) == 0){
-					
-					pagesAppended++;
-					file_temp.AddPage(&page_temp, currentPageNo++);
-					page_temp.EmptyItOut();
-					page_temp.Append(it);
-				}
-			}
-			if(page_temp.GetNumRecs() > 0){
-				pagesAppended++;
-				file_temp.AddPage(&page_temp, currentPageNo++);
-				page_temp.EmptyItOut();
-			}
-
-			file_temp.Close();
-			recordArray.clear();
-			currentNoOfPages = 0;
-			runOffset.push_back(runOffset.back() + pagesAppended);
-			pagesAppended = 0;
-		}
-		
-
-		recordArray.push_back(currentRecord);
-		currentPageSize += currentRecord->GetSize();
-		currentRecord = new Record();
-
-	}
-
-	cout << "Records read from the pipe = " << count << endl;
-
-	if(recordArray.size() > 0) {
-		numberOfRuns++;
-		ComparisonEngine comp;
-		stable_sort(recordArray.begin(), recordArray.end(), Comparator(worker_args->sortorder));
-		
-		file_temp.Open(1, "sortedRuns.bin");
-		for(Record* it : recordArray) {
-			if(page_temp.Append(it) == 0){
-				pagesAppended++;
-				file_temp.AddPage(&page_temp, currentPageNo++);
-				page_temp.EmptyItOut();
-				page_temp.Append(it);
-			}
-		}
-
-		if(page_temp.GetNumRecs() > 0){
-			pagesAppended++;
-			file_temp.AddPage(&page_temp, currentPageNo++);
-			page_temp.EmptyItOut();
-		}
-
-		file_temp.Close();
-		recordArray.clear();
-		runOffset.push_back(runOffset.back() + pagesAppended);
-	}	
-	
-	cout << "Number of runs = " << numberOfRuns << endl;
-
+	// Element for Priority Queue
 	struct QueueElement {
 		int index;
 		Record* record;
@@ -165,6 +89,7 @@ void *BigQ :: externalSortWorker(void* args){
 		}
 	};
 
+	// Comparator to compare two Queue Elements
 	struct QueueComparator{
 		ComparisonEngine comp;
 		OrderMaker* orderMaker;
@@ -177,37 +102,105 @@ void *BigQ :: externalSortWorker(void* args){
 			return comp.Compare((Record*)(a->record), (Record*)(b->record), this->orderMaker ) > 0 ? true : false;
 		}
 	};
-
-	Page* pageArr[numberOfRuns];
-	int activePages[numberOfRuns];
+	
 	Record* tempRecord;
 	typedef priority_queue<QueueElement* , vector<QueueElement*>, QueueComparator> pq;
 	QueueElement* ele;
-	pq RecordPQ(worker_args->sortorder);
-	file_temp.Open(1, "sortedRuns.bin");
 
+	file.Open(0, "sortedRuns.bin");
+	file.Close();
+	
+	// Continue until the pipe is not done
+	while(!(pipeEmpty = worker_args->in->Remove(currentRecord) == 0) || (recordArray.size() > 0)){
+
+		recordCount += pipeEmpty ? 0 : 1;
+		
+		// Increment page Count once a page fills
+		if(!pipeEmpty && currentPageSize + currentRecord->GetSize() > PAGE_SIZE){
+
+			currentNoOfPages++;
+			currentPageSize = sizeof(int);
+		}
+		
+		// Flush records to file once a Run is formed or its the last run needs
+		if(currentNoOfPages == worker_args->runlen || (pipeEmpty && recordArray.size() > 0)) {
+
+			numberOfRuns++;
+
+			stable_sort(recordArray.begin(), recordArray.end(), Comparator(worker_args->sortorder));
+
+			file.Open(1, "sortedRuns.bin");
+			
+			for(Record* it : recordArray) {
+				if(page.Append(it) == 0){
+					
+					pagesAppended++;
+					file.AddPage(&page, currentPageNo++);
+					page.EmptyItOut();
+					page.Append(it);
+				}
+			}
+
+			if(page.GetNumRecs() > 0){
+				pagesAppended++;
+				file.AddPage(&page, currentPageNo++);
+				page.EmptyItOut();
+			}
+
+			file.Close();
+			recordArray.clear();
+			currentNoOfPages = 0;
+			runOffset.push_back(runOffset.back() + pagesAppended);
+			pagesAppended = 0;
+
+			if(pipeEmpty){
+				break;
+			}
+		}
+		
+
+		recordArray.push_back(currentRecord);
+		currentPageSize += currentRecord->GetSize();
+		currentRecord = new Record();
+
+	}
+
+	cout << "Records read from the pipe = " << recordCount << endl;	
+	cout << "Number of runs = " << numberOfRuns << endl;
+
+	Page* pageArr[numberOfRuns];
+	int activePages[numberOfRuns];
+
+	pq RecordPQ(worker_args->sortorder);
+	file.Open(1, "sortedRuns.bin");
+
+
+	// Initialize the priority queue
 	for(int i = 0 ; i < numberOfRuns ; i++){
+
 		pageArr[i] = new Page();
 		activePages[i] = runOffset[i];
-		file_temp.GetPage(pageArr[i], activePages[i]++);
+		file.GetPage(pageArr[i], activePages[i]++);
 		tempRecord = new Record();
 		pageArr[i]->GetFirst(tempRecord);
 		ele = new QueueElement(i, tempRecord);
 		RecordPQ.push(ele);
 	}
 
-	count = 0;
+	recordCount = 0;
+
+	// Merge the Runs now
 	while(!RecordPQ.empty()){
 		ele = RecordPQ.top();
 		RecordPQ.pop();
-		count++;
+		recordCount++;
 		worker_args->out->Insert(ele->record);
 		int index = ele->index;
 		tempRecord = new Record();
 
 		if(pageArr[index]->GetFirst(tempRecord) == 0){
 			if(activePages[index] < runOffset[index+1]){
-				file_temp.GetPage(pageArr[index], activePages[index]++);
+				file.GetPage(pageArr[index], activePages[index]++);
 				pageArr[index]->GetFirst(tempRecord);
 				ele->record = tempRecord;
 				RecordPQ.push(ele);
@@ -220,12 +213,13 @@ void *BigQ :: externalSortWorker(void* args){
 
 	}
 
-	file_temp.Close();
+	file.Close();
 
+	// Free unwanted memory
 	for(int i = 0 ; i < numberOfRuns ; i++)
 		delete pageArr[i];
 	
-	// cout << "Number of records read from the file = " << count << endl;
+	cout << "Number of records read from the file = " << recordCount << endl;
 }
 
 BigQ::~BigQ () {
