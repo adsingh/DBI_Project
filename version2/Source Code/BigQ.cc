@@ -33,7 +33,6 @@ BigQ :: BigQ (Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
 	
     // finally shut down the out pipe
 	out.ShutDown ();
-	// pthread_exit(NULL);
 }
 
 void *BigQ :: externalSortWorker(void* args){
@@ -42,6 +41,10 @@ void *BigQ :: externalSortWorker(void* args){
 	
 	Record* currentRecord = new Record();
 	thread_data* worker_args = (thread_data *) args;
+	if(worker_args->runlen <= 0){
+		cout << "Invalid runlength, using default value of 1\n";
+		worker_args->runlen = 1;
+	}
 	int count = 0;
 	File file_temp;
 	Page page_temp;
@@ -50,9 +53,9 @@ void *BigQ :: externalSortWorker(void* args){
 	int currentPageSize = sizeof(int);
 	int numberOfRuns = 0;
 	int totalPages;
-	vector<int> activePages;
+	vector<int> runOffset;
 	
-	activePages.push_back(0);
+	runOffset.push_back(0);
 
 	struct Comparator {
 		OrderMaker* orderMaker;
@@ -68,7 +71,6 @@ void *BigQ :: externalSortWorker(void* args){
 	file_temp.Open(0, "sortedRuns.bin");
 	file_temp.Close();
 	
-	Schema s("catalog", "lineitem");
 	int pagesAppended = 0;
 
 	// Continue until the pipe is not done
@@ -88,7 +90,6 @@ void *BigQ :: externalSortWorker(void* args){
 
 			numberOfRuns++;
 
-			//cout << "Inside second if \n size of record array = " << recordArray.size() <<endl;
 			stable_sort(recordArray.begin(), recordArray.end(), Comparator(worker_args->sortorder));
 
 			file_temp.Open(1, "sortedRuns.bin");
@@ -96,29 +97,24 @@ void *BigQ :: externalSortWorker(void* args){
 			// Excluding last record
 			
 			for(Record* it : recordArray) {
-				// it->Print(&s);
 				if(page_temp.Append(it) == 0){
 					
 					pagesAppended++;
 					file_temp.AddPage(&page_temp, currentPageNo++);
-					// cout << "Page No : " << currentPageNo << " ----  No of records = " << page_temp.GetNumRecs() << endl;
 					page_temp.EmptyItOut();
 					page_temp.Append(it);
 				}
 			}
 			if(page_temp.GetNumRecs() > 0){
-				// cout << "Gadbad 2 \n";
 				pagesAppended++;
 				file_temp.AddPage(&page_temp, currentPageNo++);
-				//cout << "Page No : " << currentPageNo << " ----  No of records = " << page_temp.GetNumRecs() << endl;
 				page_temp.EmptyItOut();
 			}
 
 			file_temp.Close();
 			recordArray.clear();
 			currentNoOfPages = 0;
-			activePages.push_back(activePages.back() + pagesAppended);
-			//cout << "Number of pages appended = " << pagesAppended << endl;
+			runOffset.push_back(runOffset.back() + pagesAppended);
 			pagesAppended = 0;
 		}
 		
@@ -132,16 +128,12 @@ void *BigQ :: externalSortWorker(void* args){
 	cout << "Records read from the pipe = " << count << endl;
 
 	if(recordArray.size() > 0) {
-		//cout << " outside while size of record array = " << recordArray.size() <<endl;
 		numberOfRuns++;
 		ComparisonEngine comp;
-		//cout << "Records sorting started!\n";
 		stable_sort(recordArray.begin(), recordArray.end(), Comparator(worker_args->sortorder));
-		//cout << "Records sorted!\n";
-
+		
 		file_temp.Open(1, "sortedRuns.bin");
 		for(Record* it : recordArray) {
-			// it->Print(&s);
 			if(page_temp.Append(it) == 0){
 				pagesAppended++;
 				file_temp.AddPage(&page_temp, currentPageNo++);
@@ -151,7 +143,6 @@ void *BigQ :: externalSortWorker(void* args){
 		}
 
 		if(page_temp.GetNumRecs() > 0){
-			// cout << "Gadbad 1 \n";
 			pagesAppended++;
 			file_temp.AddPage(&page_temp, currentPageNo++);
 			page_temp.EmptyItOut();
@@ -159,28 +150,10 @@ void *BigQ :: externalSortWorker(void* args){
 
 		file_temp.Close();
 		recordArray.clear();
-		activePages.push_back(activePages.back() + pagesAppended);
-		//cout << "***Outside while Number of pages appended = " << pagesAppended << endl;
+		runOffset.push_back(runOffset.back() + pagesAppended);
 	}	
 	
 	cout << "Number of runs = " << numberOfRuns << endl;
-	
-	// Code to verify sorted runs were added to the file properly
-
-	// file_temp.Open(1, "sortedRuns.bin");
-
-	// Record temp;
-	// int recCount = 0;
-	// for(int i = 0; i < totalPages; i++){
-	// 	file_temp.GetPage(&page_temp, i);
-	// 	while(page_temp.GetFirst(&temp) != 0){
-	// 		temp.Print(&s);
-	// 		recCount++;
-	// 	}
-	// }
-	// file_temp.Close();
-
-	// cout << "Number of records read from the file  " << recCount << "\n";
 
 	struct QueueElement {
 		int index;
@@ -206,7 +179,7 @@ void *BigQ :: externalSortWorker(void* args){
 	};
 
 	Page* pageArr[numberOfRuns];
-	int dummy[numberOfRuns];
+	int activePages[numberOfRuns];
 	Record* tempRecord;
 	typedef priority_queue<QueueElement* , vector<QueueElement*>, QueueComparator> pq;
 	QueueElement* ele;
@@ -215,12 +188,10 @@ void *BigQ :: externalSortWorker(void* args){
 
 	for(int i = 0 ; i < numberOfRuns ; i++){
 		pageArr[i] = new Page();
-		dummy[i] = activePages[i];
-		//cout << "actcount = "  << dummy[i] << endl;
-		file_temp.GetPage(pageArr[i], dummy[i]++);
+		activePages[i] = runOffset[i];
+		file_temp.GetPage(pageArr[i], activePages[i]++);
 		tempRecord = new Record();
 		pageArr[i]->GetFirst(tempRecord);
-		//tempRecord->Print(&s);
 		ele = new QueueElement(i, tempRecord);
 		RecordPQ.push(ele);
 	}
@@ -230,23 +201,19 @@ void *BigQ :: externalSortWorker(void* args){
 		ele = RecordPQ.top();
 		RecordPQ.pop();
 		count++;
-		// if(count < 10)
-		// ele->record->Print(&s);
 		worker_args->out->Insert(ele->record);
 		int index = ele->index;
 		tempRecord = new Record();
 
 		if(pageArr[index]->GetFirst(tempRecord) == 0){
-			//cout << "Page finished, get next one!\n";
-			if(dummy[index] < activePages[index+1]){
-				file_temp.GetPage(pageArr[index], dummy[index]++);
+			if(activePages[index] < runOffset[index+1]){
+				file_temp.GetPage(pageArr[index], activePages[index]++);
 				pageArr[index]->GetFirst(tempRecord);
 				ele->record = tempRecord;
 				RecordPQ.push(ele);
 			}
 		}
 		else{
-			//cout << "Page not yet empty\n";
 			ele->record = tempRecord;
 			RecordPQ.push(ele);
 		}
@@ -258,9 +225,7 @@ void *BigQ :: externalSortWorker(void* args){
 	for(int i = 0 ; i < numberOfRuns ; i++)
 		delete pageArr[i];
 	
-	cout << "Number of records read from the file = " << count << endl;
-	cout << "Hello, I am worker thread with runlen = " << worker_args->runlen << endl;
-
+	// cout << "Number of records read from the file = " << count << endl;
 }
 
 BigQ::~BigQ () {
