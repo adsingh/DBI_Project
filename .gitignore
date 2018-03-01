@@ -1,11 +1,13 @@
 *.o
 
 heap_files/
-
+Submissions/
 .vscode/
 y.tab.c-e
 
 *.txt
+.~lock.A2.docx#
+*.bin
 *.out
 y.tab.c
 y.tab.h
