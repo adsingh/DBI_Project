@@ -2,8 +2,9 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
-#include<stdlib.h>
+
 
 Record :: Record () {
 	bits = NULL;
@@ -361,5 +362,8 @@ void Record :: Print (Schema *mySchema) {
 	cout << "\n";
 }
 
+int Record :: GetSize(){
 
+	return ((int *) bits)[0];
 
+}

@@ -12,6 +12,7 @@ class Record;
 using namespace std;
 
 class Page {
+
 private:
 	TwoWayList <Record> *myRecs;
 	
@@ -39,6 +40,15 @@ public:
 	// note that the record is consumed so it will have no value after
 	int Append (Record *addMe);
 
+	//Custom method to get a record using record number/offset
+	Record* GetRecord(int offset);
+
+	// Get the immediately next record
+	Record* GetNextRecord();
+
+	//getter for numRecs
+	int GetNumRecs();
+
 	// empty it out
 	void EmptyItOut ();
 
@@ -49,7 +59,7 @@ class File {
 private:
 
 	int myFilDes;
-	off_t curLength; //this was private in Chris's version
+	off_t curLength; 
 
 public:
 
