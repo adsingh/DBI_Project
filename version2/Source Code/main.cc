@@ -110,8 +110,8 @@ void test1 (int option, int runlen) {
 	sortorder.Print();
 
 	int buffsz = 100; // pipe cache size
-	Pipe input (buffsz);
-	Pipe output (buffsz);
+	Pipe input(buffsz);
+	Pipe output(buffsz);
 
 	// thread to dump data into the input pipe (for BigQ's consumption)
 	pthread_t thread1;

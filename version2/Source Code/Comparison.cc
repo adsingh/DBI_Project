@@ -130,12 +130,14 @@ int CNF :: GetSortOrders (OrderMaker &left, OrderMaker &right) {
 		
 		// if we don't have a disjunction of length one, then it
 		// can't be acceptable for use with a sort ordering
+		printf("[Comp.cc] i = %d, orlen = %d\n", i, orLens[i]);
 		if (orLens[i] != 1) {
 			continue;
 		}
 
 		// made it this far, so first verify that it is an equality check
 		if (orList[i][0].op != Equals) {
+			printf("[Comp.cc] not an equality check\n");
 			continue;
 		}
 
@@ -149,24 +151,28 @@ int CNF :: GetSortOrders (OrderMaker &left, OrderMaker &right) {
 		// so all we need to do is add the new comparison info into the
 		// relevant structures
 		if (orList[i][0].operand1 == Left) {
+			printf("[Comp.cc] operand 1 is Left; ** WHICHATT ** %d -- ** Att Type ** %d\n", orList[i][0].whichAtt1, orList[i][0].attType);
 			left.whichAtts[left.numAtts] = orList[i][0].whichAtt1;
 			left.whichTypes[left.numAtts] = orList[i][0].attType;	
 		}	
 
 		if (orList[i][0].operand1 == Right) {
-                        right.whichAtts[right.numAtts] = orList[i][0].whichAtt1;
-                        right.whichTypes[right.numAtts] = orList[i][0].attType;
-                }
+			printf("[Comp.cc] operand 1 is Right\n");
+			right.whichAtts[right.numAtts] = orList[i][0].whichAtt1;
+			right.whichTypes[right.numAtts] = orList[i][0].attType;
+		}
 
 		if (orList[i][0].operand2 == Left) {
-                        left.whichAtts[left.numAtts] = orList[i][0].whichAtt2;
-                        left.whichTypes[left.numAtts] = orList[i][0].attType;
-                }
+			printf("[Comp.cc] operand 2 is Left; ** WHICHATT ** %d -- ** Att Type ** %d\n", orList[i][0].whichAtt2, orList[i][0].attType);			
+			left.whichAtts[left.numAtts] = orList[i][0].whichAtt2;
+			left.whichTypes[left.numAtts] = orList[i][0].attType;
+		}
 
 		if (orList[i][0].operand2 == Right) {
-                        right.whichAtts[right.numAtts] = orList[i][0].whichAtt2;
-                        right.whichTypes[right.numAtts] = orList[i][0].attType;
-                }
+			printf("[Comp.cc] operand 2 is Right\n");			
+			right.whichAtts[right.numAtts] = orList[i][0].whichAtt2;
+			right.whichTypes[right.numAtts] = orList[i][0].attType;
+        }
 
 		// note that we have found two new attributes
 		left.numAtts++;

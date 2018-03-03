@@ -13,9 +13,8 @@ using namespace std;
 // make sure that the information below is correct
 
 char *catalog_path = "catalog"; 
-char *dbfile_dir = ""; 
-char *tpch_dir ="/cise/tmp/dbi_sp11/DATA/1G/"; 
-
+char *dbfile_dir = "heap_files/"; 
+char *tpch_dir ="/home/asiglani/DBI_temp/tpch-dbgen/"; 
 
 extern "C" {
 	int yyparse(void);   // defined in y.tab.c
@@ -65,11 +64,14 @@ public:
 			cout << " Error: can't parse your CNF.\n";
 			exit (1);
 		}
+
 		Record literal;
 		CNF sort_pred;
 		sort_pred.GrowFromParseTree (final, schema (), literal); // constructs CNF predicate
+		cout << "hello 1\n";
 		OrderMaker dummy;
 		sort_pred.GetSortOrders (sortorder, dummy);
+		cout << "hello\n";
 	}
 };
 

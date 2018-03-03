@@ -15,8 +15,9 @@ BigQ :: BigQ (Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
 	int retVal;
     void *status;
 
-	pthread_attr_init(&attr);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+	// pthread_attr_init(&attr);
+	// // pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+	// pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
 	worker_args.in = &in;
 	worker_args.out = &out;
@@ -24,15 +25,17 @@ BigQ :: BigQ (Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
 	worker_args.runlen = runlen;
 
 	// Creating Worker Thread
-	retVal = pthread_create(&worker, &attr, externalSortWorker, (void *) &worker_args);
+	// retVal = pthread_create(&worker, &attr, externalSortWorker, (void *) &worker_args);
+	retVal = pthread_create(&worker, NULL, externalSortWorker, (void *) &worker_args);
 
-	pthread_attr_destroy(&attr);
+	// pthread_attr_destroy(&attr);
 
 	// Wait for the worker to finish the task
-	pthread_join(worker, &status);
+	// pthread_join(worker, &status);
 	
     // finally shut down the out pipe
-	out.ShutDown ();
+	// out.ShutDown ();
+	//pthread_exit(NULL);
 }
 
 void *BigQ :: externalSortWorker(void* args){
@@ -214,7 +217,7 @@ void *BigQ :: externalSortWorker(void* args){
 	}
 
 	file.Close();
-
+	worker_args->out->ShutDown ();
 	// Free unwanted memory
 	for(int i = 0 ; i < numberOfRuns ; i++)
 		delete pageArr[i];

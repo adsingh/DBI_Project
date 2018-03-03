@@ -15,22 +15,40 @@ using namespace std;
 typedef enum {heap, sorted, tree} fType;
 typedef enum {start, add, getnext} state;
 
-// stub DBFile header..replace it with your own DBFile.h 
+struct HeapFileInfo{
+	int currRecordNo;
+	int currentPageNo;
+	off_t totalPages;
+	vector<int> pageSizesArr;
+	state prevState;
+	string configFile_name;
+};
+
+class GenericDBFile{
+	public:
+		GenericDBFile();
+		~GenericDBFile();
+
+		virtual int Create (const char *fpath, fType file_type, void *startup) = 0;
+		virtual int Open (const char *fpath) = 0;
+		virtual int Close () = 0;
+		virtual void Load (Schema &myschema, const char *loadpath) = 0;
+		virtual void MoveFirst () = 0;
+		virtual void Add (Record &addme) = 0;
+		virtual int GetNext (Record &fetchme) = 0;
+		virtual int GetNext (Record &fetchme, CNF &cnf, Record &literal) = 0;
+
+};
 
 class DBFile {
 
     private:
-        Page myPage;
-        File myFile;
-        off_t totalPages;
-        int currentPageNo, currRecordNo;
-        vector<int> pageSizesArr;
-        state prevState;
-		string configFile_name;
-		bool gettingRecordForFirstTime;
+        string configFile_name;
 		string GetFileName(const char* f_path);
+		GenericDBFile* myInternalVar;
 
 public:
+
 	DBFile (); 
 
 	int Create (const char *fpath, fType file_type, void *startup);

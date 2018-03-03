@@ -4,9 +4,9 @@
 #include "Record.h"
 #include "Schema.h"
 #include "File.h"
+#include <string>
 #include "Comparison.h"
 #include "ComparisonEngine.h"
-
 
 // This stores an individual comparison that is part of a CNF
 class Comparison {
@@ -32,6 +32,8 @@ public:
 
 	// print to the screen
 	void Print ();
+
+
 };
 
 
@@ -58,8 +60,17 @@ public:
 	// based upon ALL of their attributes
 	OrderMaker(Schema *schema);
 
+	// Init orderMaker
+	OrderMaker(int num_atts, int which_atts[], Type type_atts[]);
+
 	// print to the screen
 	void Print ();
+
+	// convert to string
+	std::string ToString();
+
+	int GetNumAtts();
+
 };
 
 class Record;
@@ -88,17 +99,19 @@ public:
 	// print the comparison structure to the screen
 	void Print ();
 
-        // this takes a parse tree for a CNF and converts it into a 2-D
-        // matrix storing the same CNF expression.  This function is applicable
-        // specifically to the case where there are two relations involved
-        void GrowFromParseTree (struct AndList *parseTree, Schema *leftSchema, 
-		Schema *rightSchema, Record &literal);
+	// this takes a parse tree for a CNF and converts it into a 2-D
+	// matrix storing the same CNF expression.  This function is applicable
+	// specifically to the case where there are two relations involved
+	void GrowFromParseTree (struct AndList *parseTree, Schema *leftSchema, 
+	Schema *rightSchema, Record &literal);
 
-        // version of the same function, except that it is used in the case of
-        // a relational selection over a single relation so only one schema is used
-        void GrowFromParseTree (struct AndList *parseTree, Schema *mySchema, 
-		Record &literal);
+	// version of the same function, except that it is used in the case of
+	// a relational selection over a single relation so only one schema is used
+	void GrowFromParseTree (struct AndList *parseTree, Schema *mySchema, 
+	Record &literal);
 
+	// Creates the query OrderMaker
+	void GetQueryOrderMaker(OrderMaker &fileSortOrder, OrderMaker &queryOrderMaker);
 };
 
 #endif
