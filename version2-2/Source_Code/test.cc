@@ -1,6 +1,8 @@
 #include "test.h"
 #include "BigQ.h"
 #include <pthread.h>
+#include <ctime>
+
 void test1 ();
 void test2 ();
 void test3 ();
@@ -18,7 +20,7 @@ int add_data (FILE *src, int numrecs, int &res) {
 		if (proc % xx == 0) cerr << ".";
 		proc++;
 	}
-	cout << "[test.cc] Records added : " << numrecs << endl;
+	cout << "[test.cc] Records added : " << proc << endl;
 	dbfile.Close ();
 	return proc;
 }
@@ -111,6 +113,7 @@ void test3 () {
 
 	int cnt = 0;
 	cerr << "\t";
+	clock_t start = clock();
 	while (dbfile.GetNext (temp, cnf, literal) && ++cnt) {
 		//temp.Print (rel->schema());
 		if (cnt % 10000 == 0) {
@@ -118,6 +121,7 @@ void test3 () {
 		}
 	}
 	cout << "\n query over " << rel->path () << " returned " << cnt << " recs\n";
+	cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 	dbfile.Close ();
 
 }

@@ -216,22 +216,6 @@ int CNF ::GetSortOrders(OrderMaker &left, OrderMaker &right)
 			right.whichTypes[right.numAtts] = orList[i][0].attType;
 		}
 
-		// *****  Amardeep changes ****** //
-		if (orList[i][0].operand1 == Literal)
-		{
-			cout << "[Comparison.cc] Getting Literal data\n";
-			right.whichAtts[right.numAtts] = orList[i][0].whichAtt1;
-			right.whichTypes[right.numAtts] = orList[i][0].attType;
-		}
-
-		if (orList[i][0].operand2 == Literal)
-		{
-			cout << "[Comparison.cc] Getting Literal data\n";
-			right.whichAtts[right.numAtts] = orList[i][0].whichAtt2;
-			right.whichTypes[right.numAtts] = orList[i][0].attType;
-		}
-		// *****  Amardeep changes ****** //
-
 		// note that we have found two new attributes
 		left.numAtts++;
 		right.numAtts++;
@@ -691,7 +675,7 @@ void CNF ::GrowFromParseTree(struct AndList *parseTree, Schema *mySchema,
 				cnf.orList[whichAnd][whichOr].whichAtt2 = numFieldsInLiteral;
 				AddLitToFile(numFieldsInLiteral, outRecFile, outSchemaFile, myOr->left->right->value, Double);
 				typeRight = Double;
-				cout << "[Comaprison.cc] ************** My value is : " << myOr->left->right->value << endl;
+				// cout << "[Comaprison.cc] ************** My value is : " << myOr->left->right->value << endl;
 				// catch-all case
 			}
 			else
@@ -746,7 +730,8 @@ void CNF ::GrowFromParseTree(struct AndList *parseTree, Schema *mySchema,
 
 	// and get the record
 	literal.SuckNextRecord(&outSchema, outRecFile);
-	literal.Print(&outSchema);
+	// literal.Print(&outSchema);
+	
 	// close the record file
 	fclose(outRecFile);
 
@@ -756,16 +741,77 @@ void CNF ::GrowFromParseTree(struct AndList *parseTree, Schema *mySchema,
 
 void CNF :: GetQueryOrderMaker(OrderMaker &fileSortOrder, OrderMaker &queryOrderMaker, OrderMaker &literalOrderMaker){
 
-	OrderMaker dummy, temp;
-	GetSortOrders(temp, dummy);
+	OrderMaker attrSortOrder, literalSortOrder;
+	// GetSortOrders(temp, dummy);
+
+	// initialize the size of the OrderMakers
+	attrSortOrder.numAtts = 0;
+	literalSortOrder.numAtts = 0;
+
+	// loop through all of the disjunctions in the CNF and find those
+	// that are acceptable for use in a sort ordering
+	for (int i = 0; i < numAnds; i++)
+	{
+
+		// if we don't have a disjunction of length one, then it
+		// can't be acceptable for use with a sort ordering
+		if (orLens[i] != 1)
+		{
+			continue;
+		}
+
+		// made it this far, so first verify that it is an equality check
+		if (orList[i][0].op != Equals)
+		{
+			continue;
+		}
+
+		// since we are here, we have found a join attribute!!!
+		// so all we need to do is add the new comparison info into the
+		// relevant structures
+		if (orList[i][0].operand1 == Left)
+		{
+			cout << "[Comparison.cc] Getting Left Operand 1 data\n";
+			attrSortOrder.whichAtts[attrSortOrder.numAtts] = orList[i][0].whichAtt1;
+			attrSortOrder.whichTypes[attrSortOrder.numAtts] = orList[i][0].attType;
+		}
+
+		if (orList[i][0].operand2 == Left)
+		{
+			cout << "[Comparison.cc] Getting Right Operand 2 data\n";
+			attrSortOrder.whichAtts[attrSortOrder.numAtts] = orList[i][0].whichAtt2;
+			attrSortOrder.whichTypes[attrSortOrder.numAtts] = orList[i][0].attType;
+		}
+
+		if (orList[i][0].operand1 == Literal)
+		{
+			cout << "[Comparison.cc] Getting Literal data\n";
+			literalSortOrder.whichAtts[literalSortOrder.numAtts] = orList[i][0].whichAtt1;
+			literalSortOrder.whichTypes[literalSortOrder.numAtts] = orList[i][0].attType;
+		}
+
+		if (orList[i][0].operand2 == Literal)
+		{
+			cout << "[Comparison.cc] Getting Literal data\n";
+			literalSortOrder.whichAtts[literalSortOrder.numAtts] = orList[i][0].whichAtt2;
+			literalSortOrder.whichTypes[literalSortOrder.numAtts] = orList[i][0].attType;
+		}
+
+		// note that we have found two new attributes
+		attrSortOrder.numAtts++;
+		literalSortOrder.numAtts++;
+	}
+
+
+
 	int numAtts = 0;
 	for(int i = 0 ; i < fileSortOrder.numAtts; i++){
-		for(int j = 0 ; j < temp.numAtts; j++){
-			if(fileSortOrder.whichAtts[i] == temp.whichAtts[j]){
-				queryOrderMaker.whichAtts[numAtts] = fileSortOrder.whichAtts[i];
-				queryOrderMaker.whichTypes[numAtts] = fileSortOrder.whichTypes[i];
-				literalOrderMaker.whichAtts[numAtts] = dummy.whichAtts[i];		
-				literalOrderMaker.whichTypes[numAtts] = dummy.whichTypes[i];		
+		for(int j = 0 ; j < attrSortOrder.numAtts; j++){
+			if(fileSortOrder.whichAtts[i] == attrSortOrder.whichAtts[j]){
+				queryOrderMaker.whichAtts[numAtts] = attrSortOrder.whichAtts[i];
+				queryOrderMaker.whichTypes[numAtts] = attrSortOrder.whichTypes[i];
+				literalOrderMaker.whichAtts[numAtts] = literalSortOrder.whichAtts[i];		
+				literalOrderMaker.whichTypes[numAtts] = literalSortOrder.whichTypes[i];		
 				numAtts++;
 			}
 		}

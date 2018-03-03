@@ -73,13 +73,11 @@ void DBFile::Load (Schema &f_schema, const char *loadpath) {
 int DBFile::Open (const char *f_path) {
 
     configFile_name = GetFileName(f_path);
-    cout << "[DBFile] Open" << endl;
     
     // Reading Data from Auxiliary File
     string line;
     string fileType;
     ifstream configFile (configFile_name.c_str());
-    cout << "[DBFile] config file open\n";
     if(!configFile.is_open()) {
         cout << "Unable to open auxiliary file" << endl;
         return 0;
@@ -89,27 +87,20 @@ int DBFile::Open (const char *f_path) {
         getline (configFile,line);
         stringstream line1(line);
         line1 >> fileType;
-        cout << "[DBFile] config file opened to get file type\n";
-        cout << "[DBFile] Filetype : " << fileType << endl;      
         if(fileType.compare("heap") == 0) {
-            cout << "[DBFile] Heapfile detected. Reading config Info\n";
             HeapFileInfo* configInfo = new HeapFileInfo();
             
             getline (configFile,line);
             stringstream currentRecord(line);
             currentRecord >> configInfo->currRecordNo;
-            cout << "first1\n";
-            // cout << "configInfo->currRecordNo : " << configInfo->currRecordNo << endl;
-
+    
             getline (configFile,line);
             stringstream currentPage(line);
             currentPage >> configInfo->currentPageNo;
-            // cout << "configInfo->currentPageNo : " << configInfo->currentPageNo << endl;
 
             getline (configFile,line);
             stringstream pages(line);
             pages >> configInfo->totalPages;
-            // cout << "configInfo->totalPages : " << configInfo->totalPages << endl;
 
             getline (configFile,line);
             stringstream pageSizes(line);
@@ -124,7 +115,6 @@ int DBFile::Open (const char *f_path) {
             int index;
             getState >> index;
             configInfo->prevState = static_cast<state>(index);
-            // cout << "configInfo->prevState : " << configInfo->prevState << endl;
 
             configInfo->configFile_name = configFile_name;
             // Add Param to constructor
@@ -171,7 +161,7 @@ int DBFile::Open (const char *f_path) {
     configFile.close();
 
     if(myInternalVar == NULL) {
-        cout << "myInternalVar NOT initialized\n" ;
+        cout << "[DBFile.cc] myInternalVar NOT initialized\n" ;
         return 0;
     }
 

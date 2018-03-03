@@ -15,9 +15,6 @@ BigQ :: BigQ (Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
 	int retVal;
     void *status;
 
-	// pthread_attr_init(&attr);
-	// pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
 	worker_args.in = &in;
 	worker_args.out = &out;
 	worker_args.sortorder = &sortorder;
@@ -25,12 +22,6 @@ BigQ :: BigQ (Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
 
 	// Creating Worker Thread
 	retVal = pthread_create(&worker, NULL, externalSortWorker, (void *) &worker_args);
-
-	//pthread_attr_destroy(&attr);
-
-	// Wait for the worker to finish the task
-	//pthread_join(worker, &status);
-	
     
 }
 
@@ -219,7 +210,7 @@ void *BigQ :: externalSortWorker(void* args){
 	for(int i = 0 ; i < numberOfRuns ; i++)
 		delete pageArr[i];
 	
-	cout << "Number of records read from the file = " << recordCount << endl;
+	cout << "Number of records read from the temp file = " << recordCount << endl;
 }
 
 BigQ::~BigQ () {

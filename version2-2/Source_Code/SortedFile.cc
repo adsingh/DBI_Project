@@ -207,32 +207,23 @@ int SortedFile :: GetNext (Record &fetchme, CNF &cnf, Record &literal){
         currentPageNo = startingPage;
     }
 
-    
-    Schema s("catalog", "lineitem");
     int count = 0;
     while(GetNext(fetchme) != 0){
         count++;
-        //fetchme.Print(&s);
         int result = -1;
         if(queryOrderMaker->GetNumAtts() > 0){
             result = comp.Compare(&fetchme, queryOrderMaker, &literal, literalOrderMaker);
-            //cout << "[SortedFile.cc] Comp result : " << result << endl;
             if(result == 1){
-                // cout << "[SortedFile.cc] RES==1 ** No of records read : " << count << endl;
                 return 0;
             }
         }
 
         if(queryOrderMaker->GetNumAtts() == 0 || result == 0){
-                //cout << "[SOrtedFile.cc] finding match\n";
             if(comp.Compare(&fetchme, &literal, &cnf) == 1){
-                //cout << "[SortedFile.cc] Match found\n";
                 return 1;
             }
         }
-
     }
-    // cout << "[SortedFile.cc] No of records read : " << count << endl;
     queryOrderMaker->Print();
     return 0;
 
@@ -240,10 +231,8 @@ int SortedFile :: GetNext (Record &fetchme, CNF &cnf, Record &literal){
 
 void SortedFile :: Merge(){
 
-    cout << "Merge\n";
     input->ShutDown();
 
-    cout << "Pipe closed\n";
     Record* tempRecord = new Record();
 
     Page* tempPage = new Page();
@@ -260,45 +249,39 @@ void SortedFile :: Merge(){
 
     } else if(output->Remove(tempRecord) != 0) {
         myFile.GetPage(&myPage, currFilePageNo++);
-        cout << "[SortedFile] Got Page\n";
         QueueElement* ele;
         
         RecordPQ.push(new QueueElement(0, tempRecord));
         tempRecord = new Record();
         myPage.GetFirst(tempRecord);
         RecordPQ.push(new QueueElement(1, tempRecord));
-        cout << "[SortedFile] PQ ready\n";
         // Check
         while(true) {
             ele = RecordPQ.top();
-            if(ele == NULL){
-                cout << "[SortedFile] PQ empty\n";
-            }
             RecordPQ.pop();
             if(tempPage->Append(ele->record) == 0) {
-                cout << "[SortedFile] Flush Page\n";
+                
                 tempFile.AddPage(tempPage, tempFilePageNo++);
                 tempPage->EmptyItOut();
                 tempPage->Append(ele->record);
             }
             tempRecord = new Record();
             if(ele->index == 0) {
-                cout << "[SortedFile] From Pipe\n";
+                
                 if(output->Remove(tempRecord) == 0) {
                     // Output Pipe is empty.
                     // Sequentially scan other data from file
                     pipeEmptied = true;
-                    cout << "[SortedFile] Pipe Emptied\n";
+                    
                     break;
                 }
                 
             } else {
-                cout << "[SortedFile] From File\n";
+                
                 if(myPage.GetFirst(tempRecord) == 0) {
-                    cout << "[SortedFile] Get New Page\n";
+                    
                     if(myFile.GetLength()-1 == currFilePageNo) {
                         fileEmptied = true;
-                        cout << "[SortedFile] File emptied\n";
                         break;
                     }
                     myFile.GetPage(&myPage, currFilePageNo++);
@@ -311,8 +294,6 @@ void SortedFile :: Merge(){
         }
 
     }
-
-    cout << "[SortedFile] Outside while\n";
 
     if((pipeEmptied || fileEmptied) && RecordPQ.size() > 0) {
         if(tempPage->Append(RecordPQ.top()->record)== 0) {
@@ -364,8 +345,6 @@ void SortedFile :: Merge(){
     tempFile.Close();
     myFile.Close();
 
-    cout << "[SortedFile.cc] Merging complete\n";
-    cout << "[SortedFile.cc] Filepath : " << filePath << endl;
     if(rename((filePath+"_temp").c_str(), filePath.c_str())){
         cout << "[SortedFile.cc] Couldn't rename the file\n";
     }

@@ -16,31 +16,31 @@
 
 class SortedFile: public GenericDBFile {
 
-    private:
-        Page myPage;
-        File myFile;
-        int currRecordNo, currentPageNo;
-		string configFile_name;
-        OrderMaker* queryOrderMaker, *literalOrderMaker;
-        BigQ* bigQ;
+private:
+    Page myPage;
+    File myFile;
+    int currRecordNo, currentPageNo;
+    string configFile_name;
+    OrderMaker* queryOrderMaker, *literalOrderMaker;
+    BigQ* bigQ;
 
-        struct SortInfo{
-            OrderMaker *orderMaker;
-            int runLength;
+    struct SortInfo{
+        OrderMaker *orderMaker;
+        int runLength;
 
-            SortInfo(int runlen, OrderMaker *orderMaker){
-                this->runLength = runlen;
-                this->orderMaker = orderMaker;
-            }
-        };
+        SortInfo(int runlen, OrderMaker *orderMaker){
+            this->runLength = runlen;
+            this->orderMaker = orderMaker;
+        }
+    };
 
-        struct SortInfo *sortInfo;
-        string filePath;
-        Pipe *input, *output;
+    struct SortInfo *sortInfo;
+    string filePath;
+    Pipe *input, *output;
 
-        // Contains page number and offset of the record found by binary search
-        int startingPage;
-        void Merge();
+    // Contains page number and offset of the record found by binary search
+    int startingPage;
+    void Merge();
 
 public:
 	SortedFile (string confgFile_name); 
