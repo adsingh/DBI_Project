@@ -111,7 +111,7 @@ public:
 	Record &literal);
 
 	// Creates the query OrderMaker
-	void GetQueryOrderMaker(OrderMaker &fileSortOrder, OrderMaker &queryOrderMaker);
+	void GetQueryOrderMaker(OrderMaker &fileSortOrder, OrderMaker &queryOrderMaker, OrderMaker &literalOrderMaker);
 };
 
 #endif

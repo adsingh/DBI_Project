@@ -190,27 +190,47 @@ int CNF ::GetSortOrders(OrderMaker &left, OrderMaker &right)
 		// relevant structures
 		if (orList[i][0].operand1 == Left)
 		{
+			cout << "[Comparison.cc] Getting Left Operand 1 data\n";
 			left.whichAtts[left.numAtts] = orList[i][0].whichAtt1;
 			left.whichTypes[left.numAtts] = orList[i][0].attType;
 		}
 
 		if (orList[i][0].operand1 == Right)
 		{
+			cout << "[Comparison.cc] Getting Right Operand 1 data\n";
 			right.whichAtts[right.numAtts] = orList[i][0].whichAtt1;
 			right.whichTypes[right.numAtts] = orList[i][0].attType;
 		}
 
 		if (orList[i][0].operand2 == Left)
 		{
+			cout << "[Comparison.cc] Getting Right Operand 2 data\n";
 			left.whichAtts[left.numAtts] = orList[i][0].whichAtt2;
 			left.whichTypes[left.numAtts] = orList[i][0].attType;
 		}
 
 		if (orList[i][0].operand2 == Right)
 		{
+			cout << "[Comparison.cc] Getting Right Operand 2 data\n";
 			right.whichAtts[right.numAtts] = orList[i][0].whichAtt2;
 			right.whichTypes[right.numAtts] = orList[i][0].attType;
 		}
+
+		// *****  Amardeep changes ****** //
+		if (orList[i][0].operand1 == Literal)
+		{
+			cout << "[Comparison.cc] Getting Literal data\n";
+			right.whichAtts[right.numAtts] = orList[i][0].whichAtt1;
+			right.whichTypes[right.numAtts] = orList[i][0].attType;
+		}
+
+		if (orList[i][0].operand2 == Literal)
+		{
+			cout << "[Comparison.cc] Getting Literal data\n";
+			right.whichAtts[right.numAtts] = orList[i][0].whichAtt2;
+			right.whichTypes[right.numAtts] = orList[i][0].attType;
+		}
+		// *****  Amardeep changes ****** //
 
 		// note that we have found two new attributes
 		left.numAtts++;
@@ -726,7 +746,7 @@ void CNF ::GrowFromParseTree(struct AndList *parseTree, Schema *mySchema,
 
 	// and get the record
 	literal.SuckNextRecord(&outSchema, outRecFile);
-
+	literal.Print(&outSchema);
 	// close the record file
 	fclose(outRecFile);
 
@@ -734,7 +754,7 @@ void CNF ::GrowFromParseTree(struct AndList *parseTree, Schema *mySchema,
 	remove("hkljdfgkSDFSDF");
 }
 
-void CNF :: GetQueryOrderMaker(OrderMaker &fileSortOrder, OrderMaker &queryOrderMaker){
+void CNF :: GetQueryOrderMaker(OrderMaker &fileSortOrder, OrderMaker &queryOrderMaker, OrderMaker &literalOrderMaker){
 
 	OrderMaker dummy, temp;
 	GetSortOrders(temp, dummy);
@@ -744,6 +764,8 @@ void CNF :: GetQueryOrderMaker(OrderMaker &fileSortOrder, OrderMaker &queryOrder
 			if(fileSortOrder.whichAtts[i] == temp.whichAtts[j]){
 				queryOrderMaker.whichAtts[numAtts] = fileSortOrder.whichAtts[i];
 				queryOrderMaker.whichTypes[numAtts] = fileSortOrder.whichTypes[i];
+				literalOrderMaker.whichAtts[numAtts] = dummy.whichAtts[i];		
+				literalOrderMaker.whichTypes[numAtts] = dummy.whichTypes[i];		
 				numAtts++;
 			}
 		}
@@ -752,4 +774,5 @@ void CNF :: GetQueryOrderMaker(OrderMaker &fileSortOrder, OrderMaker &queryOrder
 		}
 	}
 	queryOrderMaker.numAtts = numAtts;
+	literalOrderMaker.numAtts = numAtts;
 }

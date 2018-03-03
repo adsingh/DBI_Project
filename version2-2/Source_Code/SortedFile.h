@@ -21,7 +21,7 @@ class SortedFile: public GenericDBFile {
         File myFile;
         int currRecordNo, currentPageNo;
 		string configFile_name;
-        OrderMaker* queryOrderMaker;
+        OrderMaker* queryOrderMaker, *literalOrderMaker;
         BigQ* bigQ;
 
         struct SortInfo{
@@ -39,7 +39,7 @@ class SortedFile: public GenericDBFile {
         Pipe *input, *output;
 
         // Contains page number and offset of the record found by binary search
-        int matchingRecordPointer[2];
+        int startingPage;
         void Merge();
 
 public:

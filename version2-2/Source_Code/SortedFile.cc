@@ -19,6 +19,7 @@ SortedFile:: SortedFile (string confgFile_name) : GenericDBFile(){
     bigQ = nullptr;
     configFile_name = confgFile_name;
     queryOrderMaker = nullptr;
+    startingPage = 0;
 } 
 
 SortedFile:: SortedFile (string confgFile_name, int runlen, OrderMaker* orderMaker) : GenericDBFile(){
@@ -26,6 +27,7 @@ SortedFile:: SortedFile (string confgFile_name, int runlen, OrderMaker* orderMak
     configFile_name = confgFile_name;
     sortInfo = new SortInfo(runlen, orderMaker);
     queryOrderMaker = nullptr;
+    startingPage = 0;
 } 
 
 SortedFile::~SortedFile(){
@@ -135,27 +137,29 @@ int SortedFile :: GetNext (Record &fetchme, CNF &cnf, Record &literal){
     if(bigQ != nullptr){
         Merge();
     }
-
-    cout << "[SortedFile.cc] inside GetNext\n";
+    
+    ComparisonEngine comp;
+    // cout << "[SortedFile.cc] inside GetNext\n";
     if(queryOrderMaker == nullptr){
         queryOrderMaker = new OrderMaker();
-        cnf.GetQueryOrderMaker(*(sortInfo->orderMaker), *queryOrderMaker);
+        literalOrderMaker = new OrderMaker();
+        cnf.GetQueryOrderMaker(*(sortInfo->orderMaker), *queryOrderMaker, *literalOrderMaker);
 
-        if(queryOrderMaker->GetNumAtts() != 0){
+        if(queryOrderMaker->GetNumAtts() > 0){
             int totalPages = myFile.GetLength()-1;
             int left, right, mid;
             left = 0;
             right = totalPages-1;
             cout << "[SortedFile.cc] left = " << left << " right = " << right << " --- TotalPages = " << totalPages << endl;
             Record temp;
-            ComparisonEngine comp;
-
             while(left < right){
                 mid = left + (right-left)/2;
                 myPage.EmptyItOut();
                 myFile.GetPage(&myPage, mid);
+                cout << "[SortedFile.cc] got Page\n";
                 myPage.GetFirst(&temp); 
-                int result = comp.Compare(&temp, &literal, queryOrderMaker);
+                cout << "[SortedFile.cc] got first record\n";
+                int result = comp.Compare(&temp, queryOrderMaker, &literal, literalOrderMaker);
                 cout << "[SortedFile.cc] Compare result = " << result << endl;
                 if(result > 0){
                     right = mid-1;
@@ -165,7 +169,7 @@ int SortedFile :: GetNext (Record &fetchme, CNF &cnf, Record &literal){
                         myPage.EmptyItOut();
                         myFile.GetPage(&myPage, mid+1);
                         myPage.GetFirst(&temp);
-                        if(comp.Compare(&temp, &literal, queryOrderMaker) >= 0){
+                        if(comp.Compare(&temp, queryOrderMaker, &literal, literalOrderMaker) >= 0){
                             left = mid;
                             break;
                         }   
@@ -182,7 +186,7 @@ int SortedFile :: GetNext (Record &fetchme, CNF &cnf, Record &literal){
                         myPage.EmptyItOut();
                         myFile.GetPage(&myPage, mid-1);
                         myPage.GetFirst(&temp);
-                        if(comp.Compare(&temp, &literal, queryOrderMaker) == 0){
+                        if(comp.Compare(&temp, queryOrderMaker, &literal, literalOrderMaker) == 0){
                             right = mid-1;
                         }
                         else{
@@ -196,11 +200,39 @@ int SortedFile :: GetNext (Record &fetchme, CNF &cnf, Record &literal){
                 }
             }
             cout << "[SortedFile.cc] Page No after Binary Search = " << left << endl;
+            startingPage = left;
         }
+        myPage.EmptyItOut();
+        myFile.GetPage(&myPage, startingPage);
+        currentPageNo = startingPage;
     }
 
+    
+    Schema s("catalog", "lineitem");
+    int count = 0;
+    while(GetNext(fetchme) != 0){
+        count++;
+        //fetchme.Print(&s);
+        int result = -1;
+        if(queryOrderMaker->GetNumAtts() > 0){
+            result = comp.Compare(&fetchme, queryOrderMaker, &literal, literalOrderMaker);
+            //cout << "[SortedFile.cc] Comp result : " << result << endl;
+            if(result == 1){
+                // cout << "[SortedFile.cc] RES==1 ** No of records read : " << count << endl;
+                return 0;
+            }
+        }
 
+        if(queryOrderMaker->GetNumAtts() == 0 || result == 0){
+                //cout << "[SOrtedFile.cc] finding match\n";
+            if(comp.Compare(&fetchme, &literal, &cnf) == 1){
+                //cout << "[SortedFile.cc] Match found\n";
+                return 1;
+            }
+        }
 
+    }
+    // cout << "[SortedFile.cc] No of records read : " << count << endl;
     queryOrderMaker->Print();
     return 0;
 

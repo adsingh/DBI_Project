@@ -33,7 +33,7 @@ int ComparisonEngine :: Compare(Record *left, Record *right, OrderMaker *orderUs
 			// cast the two bit strings to ints
 			val1Int = *((int *) val1);
 			val2Int = *((int *) val2);
-
+			// cout << "[CompEngne.cc] value1 INT: " << val1Int << " value2 INT : " << val2Int << endl;
 			// and do the comparison
 			if (val1Int < val2Int) 
 				return -1;
@@ -50,7 +50,6 @@ int ComparisonEngine :: Compare(Record *left, Record *right, OrderMaker *orderUs
 			val1Double = *((double *) val1);
 			val2Double = *((double *) val2);
 
-			cout << "[CompEngne.cc] value1 " << val1Double << " value2 " << val2Double << endl;
 			// and do the comparison
 			if (val1Double < val2Double)
 				return -1;
@@ -102,7 +101,7 @@ int ComparisonEngine :: Compare (Record *left, OrderMaker *order_left, Record *r
 			// cast the two bit strings to ints
 			val1Int = *((int *) val1);
 			val2Int = *((int *) val2);
-	
+			// cout << "[CompEngne.cc] value1 INT: " << val1Int << " value2 INT : " << val2Int << endl;
 			// and do the comparison
 			if (val1Int < val2Int) 
 				return -1;
@@ -118,7 +117,7 @@ int ComparisonEngine :: Compare (Record *left, OrderMaker *order_left, Record *r
 			// cast the two bit strings to doubles
 			val1Double = *((double *) val1);
 			val2Double = *((double *) val2);
-	
+
 			// and do the comparison
 			if (val1Double < val2Double)
 				return -1;
@@ -222,6 +221,7 @@ int ComparisonEngine :: Run (Record *left, Record *literal, Comparison *c) {
 	if (c->operand2 == Left) {
 		val2 = left_bits + ((int *) left_bits)[c->whichAtt2 + 1];
 	} else {
+		
 		val2 = lit_bits + ((int *) lit_bits)[c->whichAtt2 + 1];
 	}
 
