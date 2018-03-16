@@ -40,6 +40,9 @@ private:
 
     // Contains page number and offset of the record found by binary search
     int startingPage;
+
+    // Utility method. Merges all records in the BigQ with the existing File
+    // Used when File switches to Read Mode
     void Merge();
 
 public:

@@ -190,28 +190,24 @@ int CNF ::GetSortOrders(OrderMaker &left, OrderMaker &right)
 		// relevant structures
 		if (orList[i][0].operand1 == Left)
 		{
-			cout << "[Comparison.cc] Getting Left Operand 1 data\n";
 			left.whichAtts[left.numAtts] = orList[i][0].whichAtt1;
 			left.whichTypes[left.numAtts] = orList[i][0].attType;
 		}
 
 		if (orList[i][0].operand1 == Right)
 		{
-			cout << "[Comparison.cc] Getting Right Operand 1 data\n";
 			right.whichAtts[right.numAtts] = orList[i][0].whichAtt1;
 			right.whichTypes[right.numAtts] = orList[i][0].attType;
 		}
 
 		if (orList[i][0].operand2 == Left)
 		{
-			cout << "[Comparison.cc] Getting Right Operand 2 data\n";
 			left.whichAtts[left.numAtts] = orList[i][0].whichAtt2;
 			left.whichTypes[left.numAtts] = orList[i][0].attType;
 		}
 
 		if (orList[i][0].operand2 == Right)
 		{
-			cout << "[Comparison.cc] Getting Right Operand 2 data\n";
 			right.whichAtts[right.numAtts] = orList[i][0].whichAtt2;
 			right.whichTypes[right.numAtts] = orList[i][0].attType;
 		}
@@ -742,7 +738,6 @@ void CNF ::GrowFromParseTree(struct AndList *parseTree, Schema *mySchema,
 void CNF :: GetQueryOrderMaker(OrderMaker &fileSortOrder, OrderMaker &queryOrderMaker, OrderMaker &literalOrderMaker){
 
 	OrderMaker attrSortOrder, literalSortOrder;
-	// GetSortOrders(temp, dummy);
 
 	// initialize the size of the OrderMakers
 	attrSortOrder.numAtts = 0;
@@ -771,28 +766,28 @@ void CNF :: GetQueryOrderMaker(OrderMaker &fileSortOrder, OrderMaker &queryOrder
 		// relevant structures
 		if (orList[i][0].operand1 == Left)
 		{
-			cout << "[Comparison.cc] Getting Left Operand 1 data\n";
+			//cout << "[Comparison.cc] Getting Left Operand 1 data\n";
 			attrSortOrder.whichAtts[attrSortOrder.numAtts] = orList[i][0].whichAtt1;
 			attrSortOrder.whichTypes[attrSortOrder.numAtts] = orList[i][0].attType;
 		}
 
 		if (orList[i][0].operand2 == Left)
 		{
-			cout << "[Comparison.cc] Getting Right Operand 2 data\n";
+			//cout << "[Comparison.cc] Getting Right Operand 2 data\n";
 			attrSortOrder.whichAtts[attrSortOrder.numAtts] = orList[i][0].whichAtt2;
 			attrSortOrder.whichTypes[attrSortOrder.numAtts] = orList[i][0].attType;
 		}
 
 		if (orList[i][0].operand1 == Literal)
 		{
-			cout << "[Comparison.cc] Getting Literal data\n";
+			//cout << "[Comparison.cc] Getting Literal data\n";
 			literalSortOrder.whichAtts[literalSortOrder.numAtts] = orList[i][0].whichAtt1;
 			literalSortOrder.whichTypes[literalSortOrder.numAtts] = orList[i][0].attType;
 		}
 
 		if (orList[i][0].operand2 == Literal)
 		{
-			cout << "[Comparison.cc] Getting Literal data\n";
+			//cout << "[Comparison.cc] Getting Literal data\n";
 			literalSortOrder.whichAtts[literalSortOrder.numAtts] = orList[i][0].whichAtt2;
 			literalSortOrder.whichTypes[literalSortOrder.numAtts] = orList[i][0].attType;
 		}
@@ -803,7 +798,9 @@ void CNF :: GetQueryOrderMaker(OrderMaker &fileSortOrder, OrderMaker &queryOrder
 	}
 
 
-
+	// Cosntruct queryOrdermaker by iterating over all attributes of file sort order
+	// Check if they are present in the cnf passed
+	// Break as soon as an attribute is not found in cnf
 	int numAtts = 0;
 	for(int i = 0 ; i < fileSortOrder.numAtts; i++){
 		for(int j = 0 ; j < attrSortOrder.numAtts; j++){

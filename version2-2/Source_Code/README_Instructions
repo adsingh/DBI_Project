@@ -1,0 +1,10 @@
+Authors:
+
+1. Amardeepsingh Siglani
+2. Ajinkya Gaikwad
+
+Instructions to test the code:
+
+- Verify Paths in test.h
+- In the test file, before calling open on the dbfile instance, make sure to first create and load the file because our implementation makes use of a config file
+that is generated after calling create. After creation, call load for creation of the '.bin' files of the required table/relation.

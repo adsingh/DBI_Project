@@ -13,8 +13,8 @@ using namespace std;
 // make sure that the information below is correct
 
 char *catalog_path = "catalog"; 
-char *dbfile_dir = "heap_files/"; 
-char *tpch_dir ="/home/asiglani/DBI_temp/tpch-dbgen/"; 
+char *dbfile_dir = ""; 
+char *tpch_dir ="/cise/tmp/dbi_sp11/DATA/10M/"; 
 
 extern "C" {
 	int yyparse(void);   // defined in y.tab.c

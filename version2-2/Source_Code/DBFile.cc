@@ -87,6 +87,7 @@ int DBFile::Open (const char *f_path) {
         getline (configFile,line);
         stringstream line1(line);
         line1 >> fileType;
+        // Create a HeapFile if first line is "heap"
         if(fileType.compare("heap") == 0) {
             HeapFileInfo* configInfo = new HeapFileInfo();
             
@@ -117,10 +118,11 @@ int DBFile::Open (const char *f_path) {
             configInfo->prevState = static_cast<state>(index);
 
             configInfo->configFile_name = configFile_name;
-            // Add Param to constructor
             myInternalVar = new HeapFile(configInfo);
 
-        } else {
+        } 
+        // Create a SortedFile if first line is "sorted"
+        else {
 
             int runlen;
             int numAtts = 100;

@@ -23,7 +23,7 @@ struct HeapFileInfo{
 	state prevState;
 	string configFile_name;
 };
-
+// Virtual Base class used internally by DBFile
 class GenericDBFile{
 	public:
 		GenericDBFile();
