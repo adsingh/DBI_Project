@@ -49,7 +49,7 @@ void *SelectPipe::selectPipeWorker(void *args) {
 	// Indicates the no of pages filled
 	int currentPageNo = 0;
 	Record* record = new Record();
-	Record* tempRecord;
+	Record* tempRecord = new Record();
 	ComparisonEngine comp;
 	while(worker_args->in->Remove(record) == 1) {
 
@@ -69,9 +69,6 @@ void *SelectPipe::selectPipeWorker(void *args) {
 				}
 				pageArr[currentPageNo]->Append(record);
 			}
-
-			// Creating new record only if it is appended to page
-			record = new Record();
 		}
 		
 	}
@@ -85,10 +82,12 @@ void *SelectPipe::selectPipeWorker(void *args) {
 	for(int i = 0; i < worker_args->totalPages; i++) {
 		delete pageArr[i];
 	}
-	
+	delete record;
+	delete tempRecord;
+
 	worker_args->out->ShutDown();
 
-	cout << "[SelectPipe][selectPipeWorker] Start" << endl;
+	cout << "[SelectPipe][selectPipeWorker] End" << endl;
 }
 
 void SelectFile::Run (DBFile &inFile, Pipe &outPipe, CNF &selOp, Record &literal) {

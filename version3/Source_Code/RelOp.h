@@ -22,8 +22,17 @@ class RelationalOp {
 class SelectFile : public RelationalOp { 
 
 	private:
-	// pthread_t thread;
-	// Record *buffer;
+	static void *selectFileWorker(void *args);
+	typedef struct{
+		DBFile* inFile;
+		Pipe* outPipe;
+		CNF* selOp;
+		Record* literal;
+		int totalPages;
+	}thread_data;
+	pthread_t worker;
+	thread_data workerArgs;
+	int totalPages;
 
 	public:
 
