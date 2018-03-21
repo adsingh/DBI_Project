@@ -1,10 +1,13 @@
 #ifndef REL_OP_H
 #define REL_OP_H
-
+#include <iostream>
+#include <pthread.h>
 #include "Pipe.h"
 #include "DBFile.h"
 #include "Record.h"
 #include "Function.h"
+
+using namespace std;
 
 class RelationalOp {
 	public:
@@ -31,10 +34,23 @@ class SelectFile : public RelationalOp {
 };
 
 class SelectPipe : public RelationalOp {
+
+	static void *selectPipeWorker(void *args);
+	typedef struct{
+		Pipe* in;
+		Pipe* out;
+		CNF* selOp;
+		Record* literal;
+		int totalPages;
+	}thread_data;
+	pthread_t worker;
+	thread_data workerArgs;
+	int totalPages;
+
 	public:
-	void Run (Pipe &inPipe, Pipe &outPipe, CNF &selOp, Record &literal) { }
-	void WaitUntilDone () { }
-	void Use_n_Pages (int n) { }
+	void Run (Pipe &inPipe, Pipe &outPipe, CNF &selOp, Record &literal);
+	void WaitUntilDone ();
+	void Use_n_Pages (int n);
 };
 class Project : public RelationalOp { 
 	public:
