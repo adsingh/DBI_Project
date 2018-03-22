@@ -177,8 +177,99 @@ void *SelectFile::selectFileWorker(void *args) {
 	delete tempRecord;
 	
 	worker_args->outPipe->ShutDown();
-
+	cout << "[SelectFile][selectFileWorker] Pipe Shutdown" << endl;
 	cout << "[SelectFile][selectFileWorker] End" << endl;
+}
+
+void Project::Run (Pipe &inPipe, Pipe &outPipe, int *keepMe, int numAttsInput, int numAttsOutput) {
+	cout << "[Project][Run] Start" << endl;
+	pthread_attr_t attr;
+	int retVal;
+
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+	
+	workerArgs.inPipe = &inPipe;
+	workerArgs.outPipe = &outPipe;
+	workerArgs.keepMe = keepMe;
+	workerArgs.numAttsInput = numAttsInput;
+	workerArgs.numAttsOutput = numAttsOutput;
+	workerArgs.totalPages = totalPages == 0 ? 1 : totalPages;
+
+	retVal = pthread_create(&worker, &attr, projectWorker, (void *) &workerArgs);
+	cout << "[Project][Run] Created new thread" << endl;
+	if(retVal) {
+		cout << "[Project][Run] Error in pthread_create" << endl;
+		exit(1);
+	}
+	pthread_attr_destroy(&attr);
+	cout << "[Project][Run] End" << endl;
+}
+
+void Project::WaitUntilDone () {
+	void* status;
+	int retVal;
+	retVal = pthread_join(worker, &status);
+	if(retVal) {
+		cout << "[Project][WaitUntilDone] Error in pthread_join" << endl;
+		exit(1);
+	}
+}
+
+void Project::Use_n_Pages(int n) {
+	totalPages = n;
+}
+
+void *Project::projectWorker(void *args) {
+	cout << "[Project][projectWorker] Start" << endl;
+	thread_data *worker_args = (thread_data *) args;
+	Page* pageArr[worker_args->totalPages]; 
+	// Initialize all Pages
+	for(int i = 0; i < worker_args->totalPages; i++) {
+		pageArr[i] = new Page();
+	}
+
+	// Indicates the no of pages filled
+	int currentPageNo = 0;
+	Record* record = new Record();
+	Record* tempRecord = new Record();
+
+	while(worker_args->inPipe->Remove(record) == 1) {
+		// Project on required attributes
+		record->Project(worker_args->keepMe, worker_args->numAttsOutput, worker_args->numAttsInput);
+		// Add to current page in page array
+		if(pageArr[currentPageNo]->Append(record) == 0) {
+			currentPageNo++;
+			// If all pages in page array are full, flush into output pipe
+			if(currentPageNo == worker_args->totalPages) {
+				for(int i = 0; i < worker_args->totalPages; i++) {
+					while(pageArr[i]->GetFirst(tempRecord) == 1) {
+						worker_args->outPipe->Insert(tempRecord);
+					}
+				}
+				currentPageNo = 0;
+			}
+			pageArr[currentPageNo]->Append(record);
+		}
+		
+	}
+	
+	// Insert the remaining records into output pipe
+	for(int i = 0; i <= currentPageNo; i++) {
+		cout << "Adding remaining Pages " << endl;
+		while(pageArr[i]->GetFirst(tempRecord) == 1) {
+			worker_args->outPipe->Insert(tempRecord);
+		}
+	}
+
+	for(int i = 0; i < worker_args->totalPages; i++) {
+		delete pageArr[i];
+	}
+	delete record;
+	delete tempRecord;
+
+	worker_args->outPipe->ShutDown();
+	cout << "[Project][projectWorker] End" << endl;
 }
 
 

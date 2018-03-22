@@ -62,10 +62,24 @@ class SelectPipe : public RelationalOp {
 	void Use_n_Pages (int n);
 };
 class Project : public RelationalOp { 
+
+	static void *projectWorker(void *args);
+	typedef struct{
+		Pipe* inPipe;
+		Pipe* outPipe;
+		int* keepMe;
+		int numAttsInput;
+		int numAttsOutput;
+		int totalPages;
+	}thread_data;
+	pthread_t worker;
+	thread_data workerArgs;
+	int totalPages;
+
 	public:
-	void Run (Pipe &inPipe, Pipe &outPipe, int *keepMe, int numAttsInput, int numAttsOutput) { }
-	void WaitUntilDone () { }
-	void Use_n_Pages (int n) { }
+	void Run (Pipe &inPipe, Pipe &outPipe, int *keepMe, int numAttsInput, int numAttsOutput);
+	void WaitUntilDone ();
+	void Use_n_Pages (int n);
 };
 class Join : public RelationalOp { 
 	public:
