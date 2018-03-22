@@ -364,6 +364,10 @@ void Record :: Print (Schema *mySchema) {
 
 int Record :: GetSize(){
 
-	return ((int *) bits)[0];
+	return bits == NULL ? 0 : ((int *) bits)[0];
 
+}
+
+bool Record :: IsNull(){
+	return bits == NULL;
 }

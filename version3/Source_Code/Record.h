@@ -70,6 +70,9 @@ public:
 
 	// Getter - Record size
 	int GetSize();
+
+	// Check if record is NULL
+	bool IsNull();
 };
 
 #endif
