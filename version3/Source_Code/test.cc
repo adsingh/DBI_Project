@@ -96,8 +96,9 @@ void q1 () {
 
 	char *pred_ps = "(ps_supplycost < 1.03)";
 	init_SF_ps (pred_ps, 100);
-
+	cout << "Initlized" << endl;
 	SF_ps.Run (dbf_ps, _ps, cnf_ps, lit_ps);
+	cout << "Returned from Run" << endl;
 	SF_ps.WaitUntilDone ();
 
 	int cnt = clear_pipe (_ps, ps->schema (), true);
@@ -129,7 +130,7 @@ void q2 () {
 
 	Attribute att3[] = {IA, SA, DA};
 	Schema out_sch ("out_sch", numAttsOut, att3);
-	int cnt = clear_pipe (_p, p->schema (), true);
+	int cnt = clear_pipe (_out, &out_sch/*p->schema ()*/, true);
 
 	cout << "\n\n query2 returned " << cnt << " records \n";
 
