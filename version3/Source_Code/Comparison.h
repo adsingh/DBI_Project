@@ -47,12 +47,11 @@ class OrderMaker {
 
 	int numAtts;
 
-	int whichAtts[MAX_ANDS];
-	Type whichTypes[MAX_ANDS];
-
 public:
 	
-
+	int whichAtts[MAX_ANDS];
+	Type whichTypes[MAX_ANDS];
+	
 	// creates an empty OrdermMaker
 	OrderMaker();
 
@@ -70,6 +69,8 @@ public:
 	std::string ToString();
 
 	int GetNumAtts();
+
+	int GetAttribute(int i);
 
 };
 

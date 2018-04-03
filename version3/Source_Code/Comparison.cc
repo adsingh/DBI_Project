@@ -152,6 +152,10 @@ int OrderMaker :: GetNumAtts(){
 	return numAtts;
 }
 
+int OrderMaker :: GetAttribute(int i) {
+	return whichAtts[i];
+}
+
 int CNF ::GetSortOrders(OrderMaker &left, OrderMaker &right)
 {
 
@@ -761,6 +765,11 @@ void CNF :: GetQueryOrderMaker(OrderMaker &fileSortOrder, OrderMaker &queryOrder
 			continue;
 		}
 
+		if(orList[i][0].operand1 != Literal && orList[i][0].operand2 != Literal){
+			continue;
+		}
+
+
 		// since we are here, we have found a join attribute!!!
 		// so all we need to do is add the new comparison info into the
 		// relevant structures
@@ -777,6 +786,20 @@ void CNF :: GetQueryOrderMaker(OrderMaker &fileSortOrder, OrderMaker &queryOrder
 			attrSortOrder.whichAtts[attrSortOrder.numAtts] = orList[i][0].whichAtt2;
 			attrSortOrder.whichTypes[attrSortOrder.numAtts] = orList[i][0].attType;
 		}
+
+		// if (orList[i][0].operand1 == Right)
+		// {
+		// 	//cout << "[Comparison.cc] Getting Literal data\n";
+		// 	literalSortOrder.whichAtts[literalSortOrder.numAtts] = orList[i][0].whichAtt1;
+		// 	literalSortOrder.whichTypes[literalSortOrder.numAtts] = orList[i][0].attType;
+		// }
+
+		// if (orList[i][0].operand2 == Right)
+		// {
+		// 	//cout << "[Comparison.cc] Getting Literal data\n";
+		// 	literalSortOrder.whichAtts[literalSortOrder.numAtts] = orList[i][0].whichAtt2;
+		// 	literalSortOrder.whichTypes[literalSortOrder.numAtts] = orList[i][0].attType;
+		// }
 
 		if (orList[i][0].operand1 == Literal)
 		{

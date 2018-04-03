@@ -19,6 +19,112 @@ Record :: ~Record () {
 }
 
 
+int Record :: ComposeRecord (Schema *mySchema, const char *src) {
+
+	// this is temporary storage
+	char *space = new (std::nothrow) char[PAGE_SIZE];
+	if (space == NULL)
+	{
+		cout << "ERROR : Not enough memory. EXIT !!!\n";
+		exit(1);
+	}
+
+	char *recSpace = new (std::nothrow) char[PAGE_SIZE];
+	if (recSpace == NULL)
+	{
+		cout << "ERROR : Not enough memory. EXIT !!!\n";
+		exit(1);
+	}
+
+	// clear out the present record
+	if (bits != NULL) 
+		delete [] bits;
+	bits = NULL;
+
+	int n = mySchema->GetNumAtts();
+	Attribute *atts = mySchema->GetAtts();
+
+	// this is the current position (int bytes) in the binary
+	// representation of the record that we are dealing with
+	int currentPosInRec = sizeof (int) * (n + 1);
+
+	// loop through all of the attributes
+	int cursor = 0;
+	for (int i = 0; i < n; i++) {
+		
+		// first we suck in the next attribute value
+		int len = 0;
+		while (1) {
+			int nextChar = src[cursor++];
+			if (nextChar == '|')
+				break;
+			else if (nextChar == '\0') {
+				delete [] space;
+				delete [] recSpace;
+				return 0;
+			}
+
+			space[len] = nextChar;
+			len++;
+		}
+
+		// set up the pointer to the current attribute in the record
+		((int *) recSpace)[i + 1] = currentPosInRec;
+
+		// null terminate the string
+		space[len] = 0;
+		len++;
+
+		// then we convert the data to the correct binary representation
+		if (atts[i].myType == Int) {
+			*((int *) &(recSpace[currentPosInRec])) = atoi (space);	
+			currentPosInRec += sizeof (int);
+
+		} else if (atts[i].myType == Double) {
+
+			// make sure that we are starting at a double-aligned position;
+			// if not, then we put some extra space in there
+			while (currentPosInRec % sizeof(double) != 0) {
+				currentPosInRec += sizeof (int);
+				((int *) recSpace)[i + 1] = currentPosInRec;
+			}
+
+			*((double *) &(recSpace[currentPosInRec])) = atof (space);
+			currentPosInRec += sizeof (double);
+
+		} else if (atts[i].myType == String) {
+
+			// align things to the size of an integer if needed
+			if (len % sizeof (int) != 0) {
+				len += sizeof (int) - (len % sizeof (int));
+			}
+
+			strcpy (&(recSpace[currentPosInRec]), space); 
+			currentPosInRec += len;
+
+		} 
+		
+	}
+
+	// the last thing is to set up the pointer to just past the end of the reocrd
+	((int *) recSpace)[0] = currentPosInRec;
+
+	// and copy over the bits
+	bits = new (std::nothrow) char[currentPosInRec];
+	if (bits == NULL)
+	{
+		cout << "ERROR : Not enough memory. EXIT !!!\n";
+		exit(1);
+	}
+
+	memcpy (bits, recSpace, currentPosInRec);	
+
+	delete [] space;
+	delete [] recSpace;
+
+	return 1;
+}
+
 int Record :: SuckNextRecord (Schema *mySchema, FILE *textFile) {
 
 	// this is temporary storage
@@ -124,7 +230,6 @@ int Record :: SuckNextRecord (Schema *mySchema, FILE *textFile) {
 	return 1;
 }
 
-
 void Record :: SetBits (char *bits) {
 	delete [] this->bits;
 	this->bits = bits;
@@ -162,6 +267,7 @@ void Record :: Consume (Record *fromMe) {
 void Record :: Copy (Record *copyMe) {
 	// this is a deep copy, so allocate the bits and move them over!
 	delete [] bits;
+	//cout << "Copying record of size : " << ((int *) copyMe->bits)[0] << endl;
 	bits = new (std::nothrow) char[((int *) copyMe->bits)[0]];
 	if (bits == NULL)
 	{
@@ -170,7 +276,6 @@ void Record :: Copy (Record *copyMe) {
 	}
 
 	memcpy (bits, copyMe->bits, ((int *) copyMe->bits)[0]);
-
 }
 
 void Record :: Project (int *attsToKeep, int numAttsToKeep, int numAttsNow) {
@@ -238,7 +343,7 @@ void Record :: Project (int *attsToKeep, int numAttsToKeep, int numAttsNow) {
 void Record :: MergeRecords (Record *left, Record *right, int numAttsLeft, int numAttsRight, int *attsToKeep, int numAttsToKeep, int startOfRight) {
 	delete [] bits;
 	bits = NULL;
-
+	// cout << "[Record][MergeRecords] Starting Merge " << endl;
 	// if one of the records is empty, new record is non-empty record
 	if(numAttsLeft == 0 ) {
 		Copy(right);
@@ -251,7 +356,7 @@ void Record :: MergeRecords (Record *left, Record *right, int numAttsLeft, int n
 
 	// first, figure out the size of the new record
 	int totSpace = sizeof (int) * (numAttsToKeep + 1);
-
+	// cout << "[Record][MergeRecords] Initial Space Allocated : " << totSpace << endl;
 	int numAttsNow = numAttsLeft;
 	char *rec_bits = left->bits;
 
@@ -269,7 +374,7 @@ void Record :: MergeRecords (Record *left, Record *right, int numAttsLeft, int n
 			totSpace += ((int *) rec_bits)[attsToKeep[i] + 2] - ((int *) rec_bits)[attsToKeep[i] + 1]; 
 		}
 	}
-
+	// cout << "[Record][MergeRecords] Calculated Total Space : " << totSpace << endl;
 	// now, allocate the new bits
 	bits = new (std::nothrow) char[totSpace+1];
 	if (bits == NULL)
@@ -284,9 +389,11 @@ void Record :: MergeRecords (Record *left, Record *right, int numAttsLeft, int n
 	numAttsNow = numAttsLeft;
 	rec_bits = left->bits;
 
+	// cout << "[Record][MergeRecords] Copying Fields " << endl;
 	// and copy all of the fields over
 	int curPos = sizeof (int) * (numAttsToKeep + 1);
 	for (int i = 0; i < numAttsToKeep; i++) {
+		// cout << "[Record][MergeRecords] Copying Field : " << i << endl;
 		if (i == startOfRight) {
 			numAttsNow = numAttsRight;
 			rec_bits = right->bits;
@@ -307,13 +414,16 @@ void Record :: MergeRecords (Record *left, Record *right, int numAttsLeft, int n
 		// set the start position of this field
 		((int *) bits)[i + 1] = curPos;	
 
+		// cout << "[Record][MergeRecords] Copied Field with attlen: " << ((int *) rec_bits)[attsToKeep[i] + 2] << " isLast attr :" << ((int *) rec_bits)[attsToKeep[i] + 1]  << endl;
 		// and copy over the bits
 		memmove (&(bits[curPos]), &(rec_bits[((int *) rec_bits)[attsToKeep[i] + 1]]), attLen);
+		
 
 		// note that we are moving along in the record
 		curPos += attLen;
 
 	}
+	// cout << "[Record][MergeRecords] Copied Fields " << endl;
 }
 
 void Record :: Print (Schema *mySchema) {
@@ -363,9 +473,7 @@ void Record :: Print (Schema *mySchema) {
 }
 
 int Record :: GetSize(){
-
 	return bits == NULL ? 0 : ((int *) bits)[0];
-
 }
 
 bool Record :: IsNull(){

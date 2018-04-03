@@ -51,7 +51,7 @@ void HeapFile::Load (Schema &f_schema, const char *loadpath) {
     FILE *tableFile = fopen(loadpath, "r");
 
     Record temp;
-
+    
     while (temp.SuckNextRecord(&f_schema, tableFile) == 1){
         Add(temp);
     }
@@ -119,6 +119,7 @@ int HeapFile::Close () {
         //cout << "totalPages="<<totalPages<<endl;
         configFile << pageSizesStr.str() + "\n";
         configFile << to_string(static_cast<int>(prevState)) + "\n";
+
         configFile.close();
     }
     
@@ -170,7 +171,7 @@ int HeapFile::GetNext (Record &fetchme) {
 
     if(currRecordNo > totalRecords){
         //cout << "Get next end of file: currentPgNo = " << currentPageNo << " totalPages = " << totalPages << endl;
-        cout << "Reached end of file\n";
+        cout << "[HeapFile][GetNext] Reached end of file\n";
         return 0;
     }
 
@@ -182,7 +183,7 @@ int HeapFile::GetNext (Record &fetchme) {
 
         case start:
 
-            cout << "Reached end of file\n";
+            cout << "[HeapFile][GetNext] Reached end of file\n";
             return 0;
             break;
 
@@ -215,7 +216,9 @@ int HeapFile::GetNext (Record &fetchme) {
 
             // Record was read from the same page, hence just get the next record
             if(currentPageNo == pageNo && !gettingRecordForFirstTime){
+                //cout << "[HeapFile][GetNext1] Getting next record " << currRecordNo << "\n";
                 rec = myPage.GetNextRecord();
+                //cout << "[HeapFile][GetNext1] Got next record\n";
             }
             else{
 

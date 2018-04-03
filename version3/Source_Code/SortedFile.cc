@@ -67,7 +67,7 @@ int SortedFile :: Close (){
 
         configFile << "sorted\n";
         configFile << sortInfo->runLength << endl;
-        configFile << sortInfo->orderMaker->ToString();
+        configFile << sortInfo->orderMaker->ToString() << endl;
         configFile.close();
     }
     
@@ -93,7 +93,7 @@ void SortedFile :: Load (Schema &myschema, const char *loadpath){
     FILE *tableFile = fopen(loadpath, "r");
 
     Record temp;
-
+    
     while (temp.SuckNextRecord(&myschema, tableFile) == 1){
         Add(temp);
     }
@@ -120,12 +120,13 @@ int SortedFile :: GetNext (Record &fetchme){
     }
     if(myPage.GetFirst(&fetchme) == 0){
         if(currentPageNo+1 == myFile.GetLength()-1){
-            cout << "Reached end of file\n";
+            cout << "[SortedFile][GetNext] Reached end of file\n";
             return 0;
         }
         myFile.GetPage(&myPage, ++currentPageNo);
         myPage.GetFirst(&fetchme);
     }
+    
     return 1;
 }
 
@@ -140,7 +141,6 @@ int SortedFile :: GetNext (Record &fetchme, CNF &cnf, Record &literal){
     if(bigQ != nullptr){
         Merge();
     }
-    
 
     ComparisonEngine comp;
     // Construct queryOrderMaker based on File sort order and input CNF
@@ -153,23 +153,29 @@ int SortedFile :: GetNext (Record &fetchme, CNF &cnf, Record &literal){
 
         // Binary Search is applied only when queryOrdermaker is not empty
         if(queryOrderMaker->GetNumAtts() > 0){
+
             int totalPages = myFile.GetLength()-1;
             int left, right, mid;
             left = 0;
             right = totalPages-1;
             Record temp;
             while(left < right){
+                
                 mid = left + (right-left)/2;
                 myPage.EmptyItOut();
                 myFile.GetPage(&myPage, mid);
+                
                 myPage.GetFirst(&temp);
+                
                 int result = comp.Compare(&temp, queryOrderMaker, &literal, literalOrderMaker);
+                
                 // First record in current Page is GREATER than queryOrderMaker
                 if(result > 0){
                     right = mid-1;
                 }
                 // First record in current Page is SMALLER than queryOrderMaker
                 else if(result < 0){
+                    
                     if(mid+1 < totalPages){
                         myPage.EmptyItOut();
                         myFile.GetPage(&myPage, mid+1);
@@ -188,6 +194,7 @@ int SortedFile :: GetNext (Record &fetchme, CNF &cnf, Record &literal){
                 }
                 // First record in current Page is EQUAL to the queryOrderMaker
                 else{
+                    
                     if(mid-1 >= 0){
                         myPage.EmptyItOut();
                         myFile.GetPage(&myPage, mid-1);
@@ -221,6 +228,7 @@ int SortedFile :: GetNext (Record &fetchme, CNF &cnf, Record &literal){
         int result = -1;
         // When Binary Search is used, the record should match the queryOrderMaker
         if(queryOrderMaker->GetNumAtts() > 0){
+            // cout << "************** Number of atrributes is > 0 \n";
             result = comp.Compare(&fetchme, queryOrderMaker, &literal, literalOrderMaker);
             if(result == 1){
                 return 0;

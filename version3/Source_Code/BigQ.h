@@ -13,9 +13,11 @@ class BigQ {
 
 private:
 
+	static int numOfInstances;
 	static void *externalSortWorker(void* args);
 	static bool myComparator (int i,int j) ;
 	typedef struct{
+		string filename;
 		Pipe* in;
 		Pipe* out;
 		OrderMaker* sortorder;

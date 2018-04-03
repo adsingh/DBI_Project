@@ -25,6 +25,7 @@ struct HeapFileInfo{
 };
 // Virtual Base class used internally by DBFile
 class GenericDBFile{
+
 	public:
 		GenericDBFile();
 		~GenericDBFile();
@@ -46,7 +47,7 @@ class DBFile {
         string configFile_name;
 		string GetFileName(const char* f_path);
 		GenericDBFile* myInternalVar;
-
+	
 public:
 
 	DBFile (); 

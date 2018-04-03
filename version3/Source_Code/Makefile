@@ -1,5 +1,5 @@
 
-CC = g++ -O2 -Wno-deprecated
+CC = g++ -std=c++14 -O2 -Wno-deprecated
 
 tag = -i
 
@@ -7,8 +7,8 @@ ifdef linux
 tag = -n
 endif
 
-test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pipe.o BigQ.o RelOp.o Function.o y.tab.o yyfunc.tab.o lex.yy.o lex.yyfunc.o test.o
-	$(CC) -o test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pipe.o BigQ.o RelOp.o Function.o y.tab.o yyfunc.tab.o lex.yy.o lex.yyfunc.o test.o -lfl -lpthread
+test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pipe.o BigQ.o RelOp.o HeapFile.o SortedFile.o Function.o y.tab.o yyfunc.tab.o lex.yy.o lex.yyfunc.o test.o
+	$(CC) -o a3.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pipe.o BigQ.o RelOp.o HeapFile.o SortedFile.o Function.o y.tab.o yyfunc.tab.o lex.yy.o lex.yyfunc.o test.o -lfl -lpthread
 	
 a2-2test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o y.tab.o lex.yy.o a2-2test.o
 	$(CC) -o a2-2test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o y.tab.o lex.yy.o a2-2test.o -lfl -lpthread
@@ -19,6 +19,9 @@ a2test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFi
 a1test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pipe.o y.tab.o lex.yy.o a1-test.o
 	$(CC) -o a1test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pipe.o y.tab.o lex.yy.o a1-test.o -lfl
 	
+main.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pipe.o BigQ.o RelOp.o HeapFile.o SortedFile.o Function.o y.tab.o yyfunc.tab.o lex.yy.o lex.yyfunc.o main.o
+	$(CC) -o main.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pipe.o BigQ.o RelOp.o HeapFile.o SortedFile.o Function.o y.tab.o yyfunc.tab.o lex.yy.o lex.yyfunc.o main.o -lfl -lpthread
+
 test.o: test.cc
 	$(CC) -g -c test.cc
 	
@@ -31,6 +34,9 @@ a2-test.o: a2-test.cc
 a1-test.o: a1-test.cc
 	$(CC) -g -c a1-test.cc
 
+main.o: main.cc
+	$(CC) -g -c main.cc
+
 Comparison.o: Comparison.cc
 	$(CC) -g -c Comparison.cc
 	
@@ -39,6 +45,12 @@ ComparisonEngine.o: ComparisonEngine.cc
 	
 DBFile.o: DBFile.cc
 	$(CC) -g -c DBFile.cc
+	
+HeapFile.o: HeapFile.cc
+	$(CC) -g -c HeapFile.cc
+
+SortedFile.o: SortedFile.cc
+	$(CC) -g -c SortedFile.cc
 
 Pipe.o: Pipe.cc
 	$(CC) -g -c Pipe.cc
