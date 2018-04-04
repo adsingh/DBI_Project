@@ -1,10 +1,19 @@
 #ifndef STATISTICS_
 #define STATISTICS_
 #include "ParseTree.h"
+#include <string>
+#include <unordered_map>
 
+using namespace std;
 
 class Statistics
 {
+
+private:
+	int unassignedGroupNo;
+	unordered_map<string, int> rel_to_group;
+	unordered_map<int, unordered_map<string, int>> group_to_info;
+
 public:
 	Statistics();
 	Statistics(Statistics &copyMe);	 // Performs deep copy
