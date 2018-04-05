@@ -761,6 +761,10 @@ void CNF :: GetQueryOrderMaker(OrderMaker &fileSortOrder, OrderMaker &queryOrder
 			continue;
 		}
 
+		if(orList[i][0].operand1 != Literal && orList[i][0].operand2 != Literal){
+			continue;
+		}
+
 		// since we are here, we have found a join attribute!!!
 		// so all we need to do is add the new comparison info into the
 		// relevant structures

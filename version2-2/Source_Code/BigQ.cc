@@ -6,23 +6,30 @@
 #include <queue>
 
 using namespace std;
+int BigQ :: numOfInstances = 0;
 
 BigQ :: BigQ (Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
 	
 	// Initializing the worker Thread
+	numOfInstances++;
+
 	pthread_t worker;
 	pthread_attr_t attr;
 	int retVal;
-    void *status;
+    // void *status;
+
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
 	worker_args.in = &in;
 	worker_args.out = &out;
 	worker_args.sortorder = &sortorder;
 	worker_args.runlen = runlen;
-
+	worker_args.filename = to_string(numOfInstances);
+	
 	// Creating Worker Thread
-	retVal = pthread_create(&worker, NULL, externalSortWorker, (void *) &worker_args);
-    
+	// retVal = pthread_create(&worker, NULL, externalSortWorker, (void *) &worker_args);
+	retVal = pthread_create(&worker, &attr, externalSortWorker, (void *) &worker_args);    
 }
 
 void *BigQ :: externalSortWorker(void* args){
@@ -97,12 +104,12 @@ void *BigQ :: externalSortWorker(void* args){
 	typedef priority_queue<QueueElement* , vector<QueueElement*>, QueueComparator> pq;
 	QueueElement* ele;
 
-	file.Open(0, "sortedRuns.bin");
+	file.Open(0, (char*)(worker_args->filename).c_str());
 	file.Close();
 	
 	// Continue until the pipe is not done
 	while(!(pipeEmpty = worker_args->in->Remove(currentRecord) == 0) || (recordArray.size() > 0)){
-
+		
 		recordCount += pipeEmpty ? 0 : 1;
 		
 		// Increment page Count once a page fills
@@ -119,7 +126,7 @@ void *BigQ :: externalSortWorker(void* args){
 
 			stable_sort(recordArray.begin(), recordArray.end(), Comparator(worker_args->sortorder));
 
-			file.Open(1, "sortedRuns.bin");
+			file.Open(1, (char*)(worker_args->filename).c_str());
 			
 			for(Record* it : recordArray) {
 				if(page.Append(it) == 0){
@@ -155,14 +162,14 @@ void *BigQ :: externalSortWorker(void* args){
 
 	}
 
-	cout << "Records read from the pipe = " << recordCount << endl;	
-	cout << "Number of runs = " << numberOfRuns << endl;
+	cout << "[BigQ.cc][worker"<< worker_args->filename << "] Records read from the pipe = " << recordCount << endl;	
+	// cout << "[BigQ.cc][worker"<< worker_args->filename << "] Number of runs = " << numberOfRuns << endl;
 
 	Page* pageArr[numberOfRuns];
 	int activePages[numberOfRuns];
 
 	pq RecordPQ(worker_args->sortorder);
-	file.Open(1, "sortedRuns.bin");
+	file.Open(1, (char*)(worker_args->filename).c_str());
 
 
 	// Initialize the priority queue
@@ -210,7 +217,7 @@ void *BigQ :: externalSortWorker(void* args){
 	for(int i = 0 ; i < numberOfRuns ; i++)
 		delete pageArr[i];
 	
-	cout << "Number of records read from the temp file = " << recordCount << endl;
+	cout << "[BigQ.cc][worker"<< worker_args->filename << "] Number of records read from the temp file = " << recordCount << endl;
 }
 
 BigQ::~BigQ () {
