@@ -2,8 +2,8 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <iostream>
 #include <stdlib.h>
+#include <iostream>
 
 
 Record :: Record () {
@@ -230,7 +230,6 @@ int Record :: SuckNextRecord (Schema *mySchema, FILE *textFile) {
 	return 1;
 }
 
-
 void Record :: SetBits (char *bits) {
 	delete [] this->bits;
 	this->bits = bits;
@@ -268,6 +267,7 @@ void Record :: Consume (Record *fromMe) {
 void Record :: Copy (Record *copyMe) {
 	// this is a deep copy, so allocate the bits and move them over!
 	delete [] bits;
+	//cout << "Copying record of size : " << ((int *) copyMe->bits)[0] << endl;
 	bits = new (std::nothrow) char[((int *) copyMe->bits)[0]];
 	if (bits == NULL)
 	{
@@ -276,7 +276,6 @@ void Record :: Copy (Record *copyMe) {
 	}
 
 	memcpy (bits, copyMe->bits, ((int *) copyMe->bits)[0]);
-
 }
 
 void Record :: Project (int *attsToKeep, int numAttsToKeep, int numAttsNow) {
@@ -344,7 +343,7 @@ void Record :: Project (int *attsToKeep, int numAttsToKeep, int numAttsNow) {
 void Record :: MergeRecords (Record *left, Record *right, int numAttsLeft, int numAttsRight, int *attsToKeep, int numAttsToKeep, int startOfRight) {
 	delete [] bits;
 	bits = NULL;
-
+	// cout << "[Record][MergeRecords] Starting Merge " << endl;
 	// if one of the records is empty, new record is non-empty record
 	if(numAttsLeft == 0 ) {
 		Copy(right);
@@ -357,7 +356,7 @@ void Record :: MergeRecords (Record *left, Record *right, int numAttsLeft, int n
 
 	// first, figure out the size of the new record
 	int totSpace = sizeof (int) * (numAttsToKeep + 1);
-
+	// cout << "[Record][MergeRecords] Initial Space Allocated : " << totSpace << endl;
 	int numAttsNow = numAttsLeft;
 	char *rec_bits = left->bits;
 
@@ -375,7 +374,7 @@ void Record :: MergeRecords (Record *left, Record *right, int numAttsLeft, int n
 			totSpace += ((int *) rec_bits)[attsToKeep[i] + 2] - ((int *) rec_bits)[attsToKeep[i] + 1]; 
 		}
 	}
-
+	// cout << "[Record][MergeRecords] Calculated Total Space : " << totSpace << endl;
 	// now, allocate the new bits
 	bits = new (std::nothrow) char[totSpace+1];
 	if (bits == NULL)
@@ -390,9 +389,11 @@ void Record :: MergeRecords (Record *left, Record *right, int numAttsLeft, int n
 	numAttsNow = numAttsLeft;
 	rec_bits = left->bits;
 
+	// cout << "[Record][MergeRecords] Copying Fields " << endl;
 	// and copy all of the fields over
 	int curPos = sizeof (int) * (numAttsToKeep + 1);
 	for (int i = 0; i < numAttsToKeep; i++) {
+		// cout << "[Record][MergeRecords] Copying Field : " << i << endl;
 		if (i == startOfRight) {
 			numAttsNow = numAttsRight;
 			rec_bits = right->bits;
@@ -413,13 +414,16 @@ void Record :: MergeRecords (Record *left, Record *right, int numAttsLeft, int n
 		// set the start position of this field
 		((int *) bits)[i + 1] = curPos;	
 
+		// cout << "[Record][MergeRecords] Copied Field with attlen: " << ((int *) rec_bits)[attsToKeep[i] + 2] << " isLast attr :" << ((int *) rec_bits)[attsToKeep[i] + 1]  << endl;
 		// and copy over the bits
 		memmove (&(bits[curPos]), &(rec_bits[((int *) rec_bits)[attsToKeep[i] + 1]]), attLen);
+		
 
 		// note that we are moving along in the record
 		curPos += attLen;
 
 	}
+	// cout << "[Record][MergeRecords] Copied Fields " << endl;
 }
 
 void Record :: Print (Schema *mySchema) {
@@ -468,5 +472,10 @@ void Record :: Print (Schema *mySchema) {
 	cout << "\n";
 }
 
+int Record :: GetSize(){
+	return bits == NULL ? 0 : ((int *) bits)[0];
+}
 
-
+bool Record :: IsNull(){
+	return bits == NULL;
+}

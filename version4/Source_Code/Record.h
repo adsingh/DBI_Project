@@ -28,11 +28,11 @@ friend class Page;
 
 private:
 	char* GetBits ();
-	void SetBits (char *bits);
 	void CopyBits(char *bits, int b_len);
 
 public:
 	char *bits;
+	void SetBits (char *bits);
 	Record ();
 	~Record();
 
@@ -68,6 +68,12 @@ public:
 	// prints the contents of the record; this requires
 	// that the schema also be given so that the record can be interpreted
 	void Print (Schema *mySchema);
+
+	// Getter - Record size
+	int GetSize();
+
+	// Check if record is NULL
+	bool IsNull();
 };
 
 #endif

@@ -63,6 +63,27 @@ void Statistics::Write(char *fromWhere)
 
 void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJoin)
 {
+    // Check whether Join can be applied
+    unordered_map<int, int> input_groups;
+    int group_no = -1;
+    for(int i = 0 ; i < numToJoin; i++) {
+        string relname_str(relNames[i]);
+        group_no = rel_to_group[relname_str];
+        if(input_groups.find(group_no) == input_groups.end()) {
+            input_groups[group_no] = 0;
+        }
+        input_groups[group_no]++;
+    }
+    int num_relations = -1;
+    string num_relation_str("num_relations");
+    for (auto it=input_groups.begin(); it!=input_groups.end(); ++it) {
+        group_no = it->first;
+        if(group_to_info[group_no][num_relation_str] != it->second) {
+            cout << "Cannot perform operation" << endl;
+            exit(1);
+        }
+    }
+
 }
 double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numToJoin)
 {

@@ -12,7 +12,7 @@ class Statistics
 private:
 	int unassignedGroupNo;
 	unordered_map<string, int> rel_to_group;
-	unordered_map<int, unordered_map<string, int>> group_to_info;
+	unordered_map<int, unordered_map<string, int> > group_to_info;
 
 public:
 	Statistics();
