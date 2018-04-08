@@ -11,7 +11,7 @@ Statistics::Statistics(Statistics &copyMe)
 {
     unassignedGroupNo = copyMe.unassignedGroupNo;
     rel_to_group = copyMe.rel_to_group;
-    for(pair<int,unordered_map<string, int>> entry: copyMe.group_to_info){
+    for(pair<int,unordered_map<string, double>> entry: copyMe.group_to_info){
         group_to_info[entry.first] = entry.second;
     }
 }
@@ -26,7 +26,7 @@ void Statistics::AddRel(char *relName, int numTuples)
     // Add entries in 2 maps if relation does not exist
     if(rel_to_group.find(relation_name) == rel_to_group.end()) {
         rel_to_group[relation_name] = unassignedGroupNo;
-        unordered_map<string, int> info;
+        unordered_map<string, double> info;
         // Signifies that the group is a singleton
         string num_relation_str("num_relations");
         group_to_info[unassignedGroupNo] = info; // I think this adds a copy of the map
@@ -88,7 +88,7 @@ void Statistics::Read(char *fromWhere)
         getline(statsFile, grpNoStr);
         grpNo = stoi(grpNoStr);
 
-        unordered_map<string, int> info;
+        unordered_map<string, double> info;
 
         getline(statsFile, entriesCntStr);
 
@@ -123,7 +123,7 @@ void Statistics::Write(char *fromWhere)
     //Size of Map 2
     statsFile << endl << to_string(group_to_info.size());
 
-    for( pair<int, unordered_map<string, int>> group_info_pair : group_to_info){
+    for( pair<int, unordered_map<string, double>> group_info_pair : group_to_info){
 
         // Writing the group no
         statsFile << endl << to_string(group_info_pair.first);
@@ -221,7 +221,7 @@ double Statistics::EstimationHelper(struct AndList *parseTree, char *relNames[],
                     continue;
                 }
 
-                unordered_map<string, int> updated_info;
+                unordered_map<string, double> updated_info;
                 string num_tuples_str("num_tuples");
                 string num_relation_str("num_relations");
 
@@ -334,7 +334,7 @@ double Statistics::EstimationHelper(struct AndList *parseTree, char *relNames[],
                     updated_num_tuples = copy.group_to_info[group_no][num_tuples_str] + 
                                          prev_or_result->group_to_info[group_no][num_tuples_str] - intersection;
 
-                    for (pair<string, int> entry : copy.group_to_info[group_no]) {
+                    for (pair<string, double> entry : copy.group_to_info[group_no]) {
                         prev_or_result->group_to_info[group_no][entry.first] = max(prev_or_result->group_to_info[group_no][entry.first],
                                                                                   entry.second); 
                     }
@@ -354,9 +354,8 @@ double Statistics::EstimationHelper(struct AndList *parseTree, char *relNames[],
         }
 
         if(prev_or_result != NULL) {
-            //unassignedGroupNo = prev_or_result->unassignedGroupNo;
             stats.rel_to_group = prev_or_result->rel_to_group;
-            for(pair<int, unordered_map<string, int> > entry : prev_or_result->group_to_info) {
+            for(pair<int, unordered_map<string, double> > entry : prev_or_result->group_to_info) {
                 stats.group_to_info[entry.first] = entry.second;
             }
         }

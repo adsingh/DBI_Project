@@ -12,7 +12,7 @@ class Statistics
 private:
 	int unassignedGroupNo;
 	unordered_map<string, int> rel_to_group;
-	unordered_map<int, unordered_map<string, int> > group_to_info;
+	unordered_map<int, unordered_map<string, double> > group_to_info;
 	int GetGroupNo(unordered_map<int, int>, string att_name, Statistics& stats);
 	double EstimationHelper(struct AndList *parseTree, char *relNames[], int numToJoin, Statistics &stats);
 
