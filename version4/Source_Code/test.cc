@@ -115,10 +115,12 @@ void q0 (){
 	yy_scan_string(cnf);
 	yyparse();
 	double dummy = s1.Estimate(final, relName, 2);
-	cout << "dummy = " << dummy << endl;
+	cout << "\ndummy = " << dummy << endl;
 	if(fabs(dummy*3.0-result) >0.1)
 	{
 		cout<<"Read or write or last apply is not correct\n";
+	}else {
+		cout << "Congratulations Q0 working\n";
 	}	
 	
 }
@@ -331,6 +333,7 @@ void q5 (){
 	s.AddRel(relName[1],1500000);
 	s.AddAtt(relName[1], "o_orderkey",1500000);
 	s.AddAtt(relName[1], "o_custkey",150000);
+	s.AddAtt(relName[1], "o_orderdate",1500000);
 	
 	s.AddRel(relName[2],6001215);
 	s.AddAtt(relName[2], "l_orderkey",1500000);
@@ -351,6 +354,9 @@ void q5 (){
 
 	if(fabs(result-400081)>0.1)
 		cout<<"error in estimating Q5\n";
+	else {
+		cout << "Congratulations Q5 working\n";
+	}
 
 	s.Apply(final, relName, 3);
 
@@ -416,6 +422,7 @@ void q7(){
 	
 	s.AddRel(relName[1],6001215);
 	s.AddAtt(relName[1], "l_orderkey",1500000);
+	s.AddAtt(relName[1], "l_receiptdate",6001215);
 	
 
 	char *cnf = "(l_receiptdate >'1995-02-01' ) AND (l_orderkey = o_orderkey)";
@@ -524,6 +531,7 @@ void q10 (){
 	s.AddRel(relName[1],1500000);
 	s.AddAtt(relName[1], "o_orderkey",1500000);
 	s.AddAtt(relName[1], "o_custkey",150000);
+	s.AddAtt(relName[1], "o_orderdate",1500000);
 	
 	s.AddRel(relName[2],6001215);
 	s.AddAtt(relName[2], "l_orderkey",1500000);
