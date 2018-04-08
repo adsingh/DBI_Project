@@ -230,18 +230,18 @@ double Statistics::EstimationHelper(struct AndList *parseTree, char *relNames[],
                 double ratio2 = (1.0*stats.group_to_info[group2][num_tuples_str]) / stats.group_to_info[group2][att2_str];
 
                 // cout << "[Stats.cc] Ratios found \n";
-                int unique_count = min(stats.group_to_info[group1][att1_str], stats.group_to_info[group2][att2_str]);
+                double unique_count = min(stats.group_to_info[group1][att1_str], stats.group_to_info[group2][att2_str]);
 
                 // Updated no of tuples
-                int updated_num_tuples = ratio1 * ratio2 * unique_count;
+                double updated_num_tuples = ratio1 * ratio2 * unique_count;
 
                 // Add attributes from group 1
-                for (pair<string, int> entry : stats.group_to_info[group1]) {
+                for (pair<string, double> entry : stats.group_to_info[group1]) {
                     updated_info[entry.first] = min(updated_num_tuples, entry.second);
                 }
 
                 // Add attributes from group 2
-                for (pair<string, int> entry : stats.group_to_info[group2]) {
+                for (pair<string, double> entry : stats.group_to_info[group2]) {
                     updated_info[entry.first] = min(updated_num_tuples, entry.second);
                 }
 
@@ -302,12 +302,12 @@ double Statistics::EstimationHelper(struct AndList *parseTree, char *relNames[],
                     ratio = 1.0/copy.group_to_info[group_no][attr_str];
                 }
 
-                int updated_num_tuples = ratio * copy.group_to_info[group_no][num_tuples_str];
+                double updated_num_tuples = ratio * copy.group_to_info[group_no][num_tuples_str];
                 // cout << "updated No ********** " << updated_num_tuples << endl;
                 // cout << "Ratio = " << ratio << endl;
                 
                 // Modify attributes
-                for (pair<string, int> entry : copy.group_to_info[group_no]) {
+                for (pair<string, double> entry : copy.group_to_info[group_no]) {
                     copy.group_to_info[group_no][entry.first] =  min(entry.second, updated_num_tuples);
                 }
 
@@ -318,8 +318,8 @@ double Statistics::EstimationHelper(struct AndList *parseTree, char *relNames[],
                 if(prev_or_result != NULL) {
 
                     // Calculate  1. if the attribute distinct count should be added. 2. Intersection
-                    int intersection = 0;
-                    int attr_distinct_count = max(copy.group_to_info[group_no][attr_str],
+                    double intersection = 0;
+                    double attr_distinct_count = max(copy.group_to_info[group_no][attr_str],
                                                 prev_or_result->group_to_info[group_no][attr_str]);
                     if(prev_or_result->group_to_info[group_no][attr_str] != stats.group_to_info[group_no][attr_str]) {
                         attr_distinct_count = copy.group_to_info[group_no][attr_str] + prev_or_result->group_to_info[group_no][attr_str];
@@ -391,7 +391,7 @@ double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numT
 {
     Statistics copy = *this;
     EstimationHelper(parseTree, relNames, numToJoin, copy);
-    copy.Write("testStats.txt");
+    //copy.Write("testStats.txt");
     if(numToJoin > 0) {
         string relname_str(relNames[0]);
         string num_tuples_str("num_tuples");
