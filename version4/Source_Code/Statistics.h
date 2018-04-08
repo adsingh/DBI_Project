@@ -13,6 +13,7 @@ private:
 	int unassignedGroupNo;
 	unordered_map<string, int> rel_to_group;
 	unordered_map<int, unordered_map<string, int> > group_to_info;
+	int GetGroupNo(unordered_map<int, int>, string att_name);
 
 public:
 	Statistics();

@@ -1,5 +1,7 @@
 #include "Statistics.h"
 #include <iostream>
+#include <vector>
+#include <fstream>
 
 Statistics::Statistics()
 {
@@ -7,6 +9,11 @@ Statistics::Statistics()
 }
 Statistics::Statistics(Statistics &copyMe)
 {
+    unassignedGroupNo = copyMe.unassignedGroupNo;
+    rel_to_group = copyMe.rel_to_group;
+    for(pair<int,unordered_map<string, int>> entry: copyMe.group_to_info){
+        group_to_info[entry.first] = entry.second;
+    }
 }
 Statistics::~Statistics()
 {
@@ -56,18 +63,101 @@ void Statistics::CopyRel(char *oldName, char *newName)
 	
 void Statistics::Read(char *fromWhere)
 {
+    ifstream statsFile(fromWhere);
+
+    // Reading Map 1 (rel_to_grp)
+    string relGroupsCntStr;
+    getline(statsFile, relGroupsCntStr);
+    cout << relGroupsCntStr << endl;
+
+    string relName, grpNoStr;
+    for(int i = 0 ; i < stoi(relGroupsCntStr); i++){
+        getline(statsFile, relName);
+        cout << relName << endl;
+        getline(statsFile, grpNoStr);
+        cout << grpNoStr << endl;
+
+        rel_to_group[relName] = stoi(grpNoStr);
+    }
+    // Reading Map 2 (grp_to_info)
+    string grpNoCntStr;
+    int grpNo;
+    getline(statsFile, grpNoCntStr);
+    cout << grpNoCntStr << endl;
+
+    string entriesCntStr, attrName, attrValStr;
+
+    for(int i = 0 ; i < stoi(grpNoCntStr) ; i++){
+        
+        getline(statsFile, grpNoStr);
+        cout << grpNoStr << endl;
+        grpNo = stoi(grpNoStr);
+
+        unordered_map<string, int> info;
+
+        getline(statsFile, entriesCntStr);
+        cout << entriesCntStr << endl;
+
+        for(int j = 0 ; j < stoi(entriesCntStr); j++){
+            getline(statsFile, attrName);
+            cout << attrName << endl;
+            getline(statsFile, attrValStr);
+            cout << attrValStr << endl;
+            info[attrName] = stoi(attrValStr);
+        }
+
+        group_to_info[grpNo] = info;
+    }
+
+    statsFile.close();
 }
 void Statistics::Write(char *fromWhere)
 {
+    ofstream statsFile(fromWhere);
+
+    // Writing Map 1
+
+    // Size of Map 2
+    statsFile << to_string(rel_to_group.size());
+
+    // Writing the relation, group_no pair per line
+    for( pair<string, int> entry : rel_to_group){
+        statsFile << endl << entry.first << "\n" << to_string(entry.second);
+    }
+
+    // Writing Map 2
+
+    //Size of Map 2
+    statsFile << endl << to_string(group_to_info.size());
+
+    for( pair<int, unordered_map<string, int>> group_info_pair : group_to_info){
+
+        // Writing the group no
+        statsFile << endl << to_string(group_info_pair.first);
+
+        // Writing the size of the unordered_map associated with the current group no
+        statsFile << endl << to_string(group_info_pair.second.size());
+
+        // Writing the attributes info for the current group
+        for(pair<string, int> entry : group_info_pair.second){
+            statsFile << endl << entry.first << endl << to_string(entry.second);
+        }
+    }
+
+    statsFile.close();
 }
 
 void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJoin)
 {
-    // Check whether Join can be applied
+     // Check whether all relations in a set are included
     unordered_map<int, int> input_groups;
     int group_no = -1;
     for(int i = 0 ; i < numToJoin; i++) {
         string relname_str(relNames[i]);
+        if(rel_to_group.find(relname_str) == rel_to_group.end()) {
+            cout << "Unknown Relation. Exiting Application" << endl;
+            exit(1);
+        }
         group_no = rel_to_group[relname_str];
         if(input_groups.find(group_no) == input_groups.end()) {
             input_groups[group_no] = 0;
@@ -84,7 +174,171 @@ void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJo
         }
     }
 
+    AndList *and_list = parseTree;
+    OrList *or_list = NULL;
+    ComparisonOp *comparison_op = NULL;
+    // Iterate over Andlist
+    while(and_list != NULL) {
+        or_list = and_list->left;
+
+        // This will be used in combining or results
+        Statistics *prev_or_result = NULL;
+        // Iterate over the OrList
+        while(or_list != NULL) {
+            comparison_op = or_list->left;
+            // Perform a join
+            if(comparison_op->left->code == NAME & comparison_op->right->code == NAME) {
+                
+                string att1_str(comparison_op->left->value);
+                string att2_str(comparison_op->right->value);
+
+                int group1 = GetGroupNo(input_groups, att1_str);
+                int group2 = GetGroupNo(input_groups, att2_str);
+
+                // If groups are same, do nothing
+                if(group1 == group2) {
+                    or_list = or_list->rightOr;
+                    continue;
+                }
+
+                unordered_map<string, int> updated_info;
+                string num_tuples_str("num_tuples");
+                string num_relation_str("num_relations");
+
+                // Assuming it will automatically truncate division result
+                int ratio1 = group_to_info[group1][num_tuples_str] / group_to_info[group1][att1_str];
+                int ratio2 = group_to_info[group2][num_tuples_str] / group_to_info[group2][att2_str];
+                int unique_count = min(group_to_info[group1][att1_str], group_to_info[group2][att2_str]);
+
+                // Updated no of tuples
+                int updated_num_tuples = ratio1 * ratio2 * unique_count;
+
+                // Add attributes from group 1
+                for (auto it=group_to_info[group1].begin(); it!=group_to_info[group1].end(); ++it) {
+                    updated_info[it->first] = min(updated_num_tuples, it->second);
+                }
+
+                // Add attributes from group 2
+                for (auto it=group_to_info[group2].begin(); it!=group_to_info[group2].end(); ++it) {
+                    updated_info[it->first] = min(updated_num_tuples, it->second);
+                }
+
+                // Update join attributes. This will always be the smaller value
+                // If 1 value is larger, then some values will not appear in the join
+                updated_info[att1_str] = unique_count;
+                updated_info[att2_str] = unique_count;
+
+                // Update no of tuples
+                updated_info[num_tuples_str] = updated_num_tuples;
+
+                // Update no of relations
+                updated_info[num_relation_str] = group_to_info[group1][num_relation_str] + group_to_info[group2][num_relation_str];
+
+                // Update maps. Delete larger group. Keep smaller group
+                int min_group = min(group1, group2);
+                int max_group = max(group1, group2);
+
+                // Update rel_to_group and delete entry from group_to_info
+                group_to_info.erase(max_group);
+                for (auto it=rel_to_group.begin(); it!=rel_to_group.end(); ++it) {
+                    // There can be multiple such relations
+                    if(it->second == max_group) {
+                        rel_to_group[it->first] = min_group;
+                    }
+                }
+
+                // Add the new map to group_to_info
+                group_to_info[min_group] = updated_info;
+
+            } else { // Perform selection
+
+                // Create a copy of original
+                Statistics copy = *this;
+
+                // Perform operation on the copy
+                int group = -1;
+                string attr_str(comparison_op->left->value);
+                string num_tuples_str("num_tuples");
+                if(comparison_op->left->code == NAME) {
+                    group = GetGroupNo(input_groups, attr_str);
+                }
+                double ratio = -1;
+                if(comparison_op->code == LESS_THAN || comparison_op->code == GREATER_THAN) {
+                    ratio = 1.0/3;
+                } else {
+                    ratio = 1.0/copy.group_to_info[group_no][attr_str];
+                }
+
+                int updated_num_tuples = ratio * copy.group_to_info[group][num_tuples_str];
+                // Modify attributes
+                for (pair<string, int> entry : copy.group_to_info[group]) {
+                    copy.group_to_info[group_no][entry.first] =  min(entry.second, updated_num_tuples);
+                }
+
+                copy.group_to_info[group_no][num_tuples_str] = updated_num_tuples;
+                copy.group_to_info[group_no][attr_str] = ratio * copy.group_to_info[group_no][attr_str];
+
+                // Merge with previous or result
+                if(prev_or_result != NULL) {
+
+                    // Calculate  1. if the attribute distinct count should be added. 2. Intersection
+                    int intersection = 0;
+                    int attr_distinct_count = max(copy.group_to_info[group][attr_str],
+                                                prev_or_result->group_to_info[group][attr_str]);
+                    if(prev_or_result->group_to_info[group_no][attr_str] != group_to_info[group_no][attr_str]) {
+                        attr_distinct_count = copy.group_to_info[group][attr_str] + prev_or_result->group_to_info[group][attr_str];
+                    } else { // This was not used previously
+                        intersection = prev_or_result->group_to_info[group][num_tuples_str] * ratio;
+                    }
+
+                    // Calculate resultant tuples
+                    updated_num_tuples = copy.group_to_info[group_no][num_tuples_str] + 
+                                         prev_or_result->group_to_info[group_no][num_tuples_str] - intersection;
+
+                    for (pair<string, int> entry : copy.group_to_info[group]) {
+                        prev_or_result->group_to_info[group_no][entry.first] = max(prev_or_result->group_to_info[group_no][entry.first],
+                                                                                  entry.second); 
+                    }
+
+                    prev_or_result->group_to_info[group][num_tuples_str] = updated_num_tuples;
+                    prev_or_result->group_to_info[group][attr_str] = attr_distinct_count;
+                    
+                } else {
+                    prev_or_result = &copy;
+                }
+
+            }
+
+            or_list = or_list->rightOr;
+            
+        }
+
+        if(prev_or_result != NULL) {
+            unassignedGroupNo = prev_or_result->unassignedGroupNo;
+            rel_to_group = prev_or_result->rel_to_group;
+            for(pair<int, unordered_map<string, int> > entry : prev_or_result->group_to_info) {
+                group_to_info[entry.first] = entry.second;
+            }
+        }
+        
+        and_list = and_list->rightAnd;
+        
+    }
+
 }
+
+int Statistics::GetGroupNo(unordered_map<int, int> input_groups, string att_name) {
+    int group_no = -1;
+    for (auto it=input_groups.begin(); it!=input_groups.end(); ++it) {
+        group_no = it->first;
+        if(group_to_info[group_no].find(att_name) != group_to_info[group_no].end()) {
+            return group_no;
+        }
+    }
+    cout << "Group NOT FOUND for attribute : " << att_name << endl;
+    exit(1);
+}
+
 double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numToJoin)
 {
 }

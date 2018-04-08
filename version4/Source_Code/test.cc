@@ -99,25 +99,26 @@ void q0 (){
 
 	yy_scan_string(cnf);
 	yyparse();
-	double result = s.Estimate(final, relName, 2);
-	if(result!=800000)
-		cout<<"error in estimating Q1 before apply \n ";
-	s.Apply(final, relName, 2);
+	PrintAndList(final);
+	// double result = s.Estimate(final, relName, 2);
+	// if(result!=800000)
+	// 	cout<<"error in estimating Q1 before apply \n ";
+	// s.Apply(final, relName, 2);
 
-	// test write and read
-	s.Write(fileName);
+	// // test write and read
+	// s.Write(fileName);
 
-	//reload the statistics object from file
-	Statistics s1;
-	s1.Read(fileName);	
-	cnf = "(s_suppkey>1000)";	
-	yy_scan_string(cnf);
-	yyparse();
-	double dummy = s1.Estimate(final, relName, 2);
-	if(fabs(dummy*3.0-result) >0.1)
-	{
-		cout<<"Read or write or last apply is not correct\n";
-	}	
+	// //reload the statistics object from file
+	// Statistics s1;
+	// s1.Read(fileName);	
+	// cnf = "(s_suppkey>1000)";	
+	// yy_scan_string(cnf);
+	// yyparse();
+	// double dummy = s1.Estimate(final, relName, 2);
+	// if(fabs(dummy*3.0-result) >0.1)
+	// {
+	// 	cout<<"Read or write or last apply is not correct\n";
+	// }	
 	
 }
 
