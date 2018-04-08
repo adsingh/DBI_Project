@@ -149,16 +149,21 @@ void Statistics::Write(char *fromWhere)
 
 void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJoin)
 {
-     // Check whether all relations in a set are included
+    EstimationHelper(parseTree, relNames, numToJoin, *this);   
+}
+
+double Statistics::EstimationHelper(struct AndList *parseTree, char *relNames[], int numToJoin, Statistics &stats) {
+
+    // Check whether all relations in a set are included
     unordered_map<int, int> input_groups;
     int group_no = -1;
     for(int i = 0 ; i < numToJoin; i++) {
         string relname_str(relNames[i]);
-        if(rel_to_group.find(relname_str) == rel_to_group.end()) {
+        if(stats.rel_to_group.find(relname_str) == stats.rel_to_group.end()) {
             cout << "Unknown Relation. Exiting Application" << endl;
             exit(1);
         }
-        group_no = rel_to_group[relname_str];
+        group_no = stats.rel_to_group[relname_str];
         if(input_groups.find(group_no) == input_groups.end()) {
             input_groups[group_no] = 0;
         }
@@ -168,7 +173,7 @@ void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJo
     string num_relation_str("num_relations");
     for (auto it=input_groups.begin(); it!=input_groups.end(); ++it) {
         group_no = it->first;
-        if(group_to_info[group_no][num_relation_str] != it->second) {
+        if(stats.group_to_info[group_no][num_relation_str] != it->second) {
             cout << "Cannot perform operation" << endl;
             exit(1);
         }
@@ -206,20 +211,20 @@ void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJo
                 string num_relation_str("num_relations");
 
                 // Assuming it will automatically truncate division result
-                int ratio1 = group_to_info[group1][num_tuples_str] / group_to_info[group1][att1_str];
-                int ratio2 = group_to_info[group2][num_tuples_str] / group_to_info[group2][att2_str];
-                int unique_count = min(group_to_info[group1][att1_str], group_to_info[group2][att2_str]);
+                int ratio1 = stats.group_to_info[group1][num_tuples_str] / stats.group_to_info[group1][att1_str];
+                int ratio2 = stats.group_to_info[group2][num_tuples_str] / stats.group_to_info[group2][att2_str];
+                int unique_count = min(stats.group_to_info[group1][att1_str], stats.group_to_info[group2][att2_str]);
 
                 // Updated no of tuples
                 int updated_num_tuples = ratio1 * ratio2 * unique_count;
 
                 // Add attributes from group 1
-                for (auto it=group_to_info[group1].begin(); it!=group_to_info[group1].end(); ++it) {
+                for (auto it=stats.group_to_info[group1].begin(); it!=stats.group_to_info[group1].end(); ++it) {
                     updated_info[it->first] = min(updated_num_tuples, it->second);
                 }
 
                 // Add attributes from group 2
-                for (auto it=group_to_info[group2].begin(); it!=group_to_info[group2].end(); ++it) {
+                for (auto it=stats.group_to_info[group2].begin(); it!=stats.group_to_info[group2].end(); ++it) {
                     updated_info[it->first] = min(updated_num_tuples, it->second);
                 }
 
@@ -232,28 +237,28 @@ void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJo
                 updated_info[num_tuples_str] = updated_num_tuples;
 
                 // Update no of relations
-                updated_info[num_relation_str] = group_to_info[group1][num_relation_str] + group_to_info[group2][num_relation_str];
+                updated_info[num_relation_str] = stats.group_to_info[group1][num_relation_str] + stats.group_to_info[group2][num_relation_str];
 
                 // Update maps. Delete larger group. Keep smaller group
                 int min_group = min(group1, group2);
                 int max_group = max(group1, group2);
 
                 // Update rel_to_group and delete entry from group_to_info
-                group_to_info.erase(max_group);
-                for (auto it=rel_to_group.begin(); it!=rel_to_group.end(); ++it) {
+                stats.group_to_info.erase(max_group);
+                for (auto it=stats.rel_to_group.begin(); it!=stats.rel_to_group.end(); ++it) {
                     // There can be multiple such relations
                     if(it->second == max_group) {
-                        rel_to_group[it->first] = min_group;
+                        stats.rel_to_group[it->first] = min_group;
                     }
                 }
 
                 // Add the new map to group_to_info
-                group_to_info[min_group] = updated_info;
+                stats.group_to_info[min_group] = updated_info;
 
             } else { // Perform selection
 
                 // Create a copy of original
-                Statistics copy = *this;
+                Statistics copy = stats;
 
                 // Perform operation on the copy
                 int group = -1;
@@ -314,10 +319,10 @@ void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJo
         }
 
         if(prev_or_result != NULL) {
-            unassignedGroupNo = prev_or_result->unassignedGroupNo;
-            rel_to_group = prev_or_result->rel_to_group;
+            //unassignedGroupNo = prev_or_result->unassignedGroupNo;
+            stats.rel_to_group = prev_or_result->rel_to_group;
             for(pair<int, unordered_map<string, int> > entry : prev_or_result->group_to_info) {
-                group_to_info[entry.first] = entry.second;
+                stats.group_to_info[entry.first] = entry.second;
             }
         }
         
@@ -341,5 +346,15 @@ int Statistics::GetGroupNo(unordered_map<int, int> input_groups, string att_name
 
 double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numToJoin)
 {
+    Statistics copy = *this;
+    EstimationHelper(parseTree, relNames, numToJoin, copy);
+    if(numToJoin > 0) {
+        string relname_str(relNames[0]);
+        string num_tuples_str("num_tuples");
+        int group_no = copy.rel_to_group[relname_str];
+        return copy.group_to_info[group_no][num_tuples_str];
+    } 
+    return 0;
+    
 }
 
