@@ -115,6 +115,7 @@ void q0 (){
 	yy_scan_string(cnf);
 	yyparse();
 	double dummy = s1.Estimate(final, relName, 2);
+	cout << "dummy = " << dummy << endl;
 	if(fabs(dummy*3.0-result) >0.1)
 	{
 		cout<<"Read or write or last apply is not correct\n";
@@ -140,7 +141,7 @@ void q1 (){
 
 	double result = s.Estimate(final, relName, 1);
 	cout<<"Your estimation Result  " <<result;
-	cout<<"\n Correct Answer: 8.5732e+5";
+	cout<<"\n Correct Answer: 8.5732e+5\n";
 
 	s.Apply(final, relName, 1);
 
@@ -155,7 +156,7 @@ void q1 (){
 void q2 (){
 
 	Statistics s;
-        char *relName[] = {"orders","customer","nation"};
+    char *relName[] = {"orders","customer","nation"};
 
 	
 	s.AddRel(relName[0],1500000);
@@ -182,6 +183,9 @@ void q2 (){
 	double result = s.Estimate(final, relName, 3);
 	if(fabs(result-1500000)>0.1)
 		cout<<"error in estimating Q2\n";
+	else{
+		cout << "Congratulations Q2 working\n";
+	}
 	s.Apply(final, relName, 3);
 
 	s.Write(fileName);
@@ -196,10 +200,10 @@ void q3 (){
 	Statistics s;
 	char *relName[] = {"supplier","customer","nation"};
 
-	s.Read(fileName);
+	//s.Read(fileName);
 	
 	s.AddRel(relName[0],10000);
-	s.AddAtt(relName[0], "s_nationey",25);
+	s.AddAtt(relName[0], "s_nationkey",25);
 
 	s.AddRel(relName[1],150000);
 	s.AddAtt(relName[1], "c_custkey",150000);
@@ -233,7 +237,9 @@ void q3 (){
 	double result = s.Estimate(final, set3, 4);
 	if(fabs(result-60000000.0)>0.1)
 		cout<<"error in estimating Q3\n";
-
+	else{
+		cout << "Congratulations Q3 working\n";
+	}
 	s.Apply(final, set3, 4);
 
 	s.Write(fileName);
@@ -244,7 +250,7 @@ void q3 (){
 void q4 (){
 
 	Statistics s;
-        char *relName[] = { "part", "partsupp", "supplier", "nation", "region"};
+    char *relName[] = { "part", "partsupp", "supplier", "nation", "region"};
 
 	s.AddRel(relName[0],200000);
 	s.AddAtt(relName[0], "p_partkey",200000);
@@ -272,35 +278,43 @@ void q4 (){
 	s.CopyRel("nation","n");
 	s.CopyRel("region","r");
 
+	char *set1[] ={"p","ps"};
 	char *cnf = "(p.p_partkey=ps.ps_partkey) AND (p.p_size = 2)";
 	yy_scan_string(cnf);
 	yyparse();
-	s.Apply(final, relName, 2);
+	s.Apply(final, set1, 2);
 
+	char *set2[] ={"p","ps","s"};
 	cnf ="(s.s_suppkey = ps.ps_suppkey)";
 	yy_scan_string(cnf);
 	yyparse();
-	s.Apply(final, relName, 3);
+	s.Apply(final, set2, 3);
 
+	char *set3[] ={"p","ps","s","n"};
 	cnf =" (s.s_nationkey = n.n_nationkey)";
 	yy_scan_string(cnf);
 	yyparse();
-	s.Apply(final, relName, 4);
+	s.Apply(final, set3, 4);
 
+	char *set4[] ={"p","ps","s","n","r"};
 	cnf ="(n.n_regionkey = r.r_regionkey) AND (r.r_name = 'AMERICA') ";
 	yy_scan_string(cnf);
 	yyparse();
 
-	double result = s.Estimate(final, relName, 5);
+	// s.Apply(final, relName, 5);	
+	
+	// s.Write(fileName);
+
+	double result = s.Estimate(final, set4, 5);
+	cout << "[test.cc] Q4 Result = " << result << endl;
 	if(fabs(result-3200)>0.1)
 		cout<<"error in estimating Q4\n";
-
+	else{
+		cout << "Congratulations Q4 working\n";
+	}
 	s.Apply(final, relName, 5);	
 	
 	s.Write(fileName);
-	
-
-
 
 }
 
@@ -348,9 +362,9 @@ void q5 (){
 void q6 (){
 
 	Statistics s;
-        char *relName[] = { "partsupp", "supplier", "nation"};
+    char *relName[] = { "partsupp", "supplier", "nation"};
 
-	s.Read(fileName);
+	// s.Read(fileName);
 	
 	s.AddRel(relName[0],800000);
 	s.AddAtt(relName[0], "ps_suppkey",10000);
@@ -376,7 +390,10 @@ void q6 (){
 	double result = s.Estimate(final, relName, 3);
 
 	if(fabs(result-32000)>0.1)
-		cout<<"error in estimating Q6\n";
+		cout<<"[test.cc] error in estimating Q6\n";
+	else{
+		cout << "Congratulations Q6 working\n";
+	}
 	s.Apply(final, relName, 3);
 	
 	s.Write(fileName);
@@ -390,7 +407,7 @@ void q7(){
 	Statistics s;
         char *relName[] = { "orders", "lineitem"};
 
-	s.Read(fileName);
+	// s.Read(fileName);
 	
 
 	s.AddRel(relName[0],1500000);
@@ -409,7 +426,9 @@ void q7(){
 
 	if(fabs(result-2000405)>0.1)
 		cout<<"error in estimating Q7\n";
-
+	else{
+		cout << "Congratulations Q7 working\n";
+	}
 	s.Apply(final, relName, 2);
 	s.Write(fileName);
 
@@ -422,7 +441,7 @@ void q8 (){
 	Statistics s;
         char *relName[] = { "part",  "partsupp"};
 
-	s.Read(fileName);
+	// s.Read(fileName);
 	
 	s.AddRel(relName[0],200000);
 	s.AddAtt(relName[0], "p_partkey",200000);
@@ -442,7 +461,9 @@ void q8 (){
 
 	if(fabs(result-48000)>0.1)
 		cout<<"error in estimating Q8\n";
-
+	else{
+		cout << "Congratulations Q8 working\n";
+	}
 	s.Apply(final, relName,2);
 	
 	s.Write(fileName);
@@ -451,7 +472,7 @@ void q8 (){
 void q9(){
 
 	Statistics s;
-        char *relName[] = { "part",  "partsupp","supplier"};
+    char *relName[] = { "part",  "partsupp","supplier"};
 
 	
 	s.AddRel(relName[0],200000);
@@ -477,7 +498,9 @@ void q9(){
 	double result = s.Estimate(final, relName,3);
 	if(fabs(result-4)>0.5)
 		cout<<"error in estimating Q9\n";
-
+	else{
+		cout << "Congratulations Q9 working\n";
+	}
 	s.Apply(final, relName,3);
 	
 	s.Write(fileName);
@@ -524,7 +547,9 @@ void q10 (){
 	double result = s.Estimate(final, relName, 4);
 	if(fabs(result-2000405)>0.1)
 		cout<<"error in estimating Q10\n";
-
+	else{
+		cout << "Congratulations Q10 working\n";
+	}
 	s.Apply(final, relName, 4);  
 	
 	s.Write(fileName);
@@ -537,11 +562,11 @@ void q11 (){
 	Statistics s;
         char *relName[] = { "part",  "lineitem"};
 
-	s.Read(fileName);
+	// s.Read(fileName);
 	
 	s.AddRel(relName[0],200000);
 	s.AddAtt(relName[0], "p_partkey",200000);
-	s.AddAtt(relName[0], "p_conatiner",40);
+	s.AddAtt(relName[0], "p_container",40);
 
 	s.AddRel(relName[1],6001215);
 	s.AddAtt(relName[1], "l_partkey",200000);
@@ -555,8 +580,11 @@ void q11 (){
 	
 	double result = s.Estimate(final, relName,2);
 
-	if(fabs(result-21432.9)>0.5)
+	if(fabs(result-21432.9)>1)
 		cout<<"error in estimating Q11\n";
+	else{
+		cout << "Congratulations Q11 working\n";
+	}
 	s.Apply(final, relName,2);
 	
 	s.Write(fileName);

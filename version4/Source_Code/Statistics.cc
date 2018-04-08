@@ -68,14 +68,11 @@ void Statistics::Read(char *fromWhere)
     // Reading Map 1 (rel_to_grp)
     string relGroupsCntStr;
     getline(statsFile, relGroupsCntStr);
-    cout << relGroupsCntStr << endl;
 
     string relName, grpNoStr;
     for(int i = 0 ; i < stoi(relGroupsCntStr); i++){
         getline(statsFile, relName);
-        cout << relName << endl;
         getline(statsFile, grpNoStr);
-        cout << grpNoStr << endl;
 
         rel_to_group[relName] = stoi(grpNoStr);
     }
@@ -83,26 +80,21 @@ void Statistics::Read(char *fromWhere)
     string grpNoCntStr;
     int grpNo;
     getline(statsFile, grpNoCntStr);
-    cout << grpNoCntStr << endl;
 
     string entriesCntStr, attrName, attrValStr;
 
     for(int i = 0 ; i < stoi(grpNoCntStr) ; i++){
         
         getline(statsFile, grpNoStr);
-        cout << grpNoStr << endl;
         grpNo = stoi(grpNoStr);
 
         unordered_map<string, int> info;
 
         getline(statsFile, entriesCntStr);
-        cout << entriesCntStr << endl;
 
         for(int j = 0 ; j < stoi(entriesCntStr); j++){
             getline(statsFile, attrName);
-            cout << attrName << endl;
             getline(statsFile, attrValStr);
-            cout << attrValStr << endl;
             info[attrName] = stoi(attrValStr);
         }
 
@@ -111,6 +103,7 @@ void Statistics::Read(char *fromWhere)
 
     statsFile.close();
 }
+
 void Statistics::Write(char *fromWhere)
 {
     ofstream statsFile(fromWhere);
@@ -152,6 +145,15 @@ void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJo
     EstimationHelper(parseTree, relNames, numToJoin, *this);   
 }
 
+void parseAttributeName(string& att_name){
+
+    size_t found = att_name.find(".");
+
+    if(found != string::npos){
+        att_name = att_name.substr(found+1);
+    }
+}
+
 double Statistics::EstimationHelper(struct AndList *parseTree, char *relNames[], int numToJoin, Statistics &stats) {
 
     // Check whether all relations in a set are included
@@ -169,11 +171,16 @@ double Statistics::EstimationHelper(struct AndList *parseTree, char *relNames[],
         }
         input_groups[group_no]++;
     }
+
     int num_relations = -1;
+
     string num_relation_str("num_relations");
-    for (auto it=input_groups.begin(); it!=input_groups.end(); ++it) {
-        group_no = it->first;
-        if(stats.group_to_info[group_no][num_relation_str] != it->second) {
+
+    // Verifying that all the relations belonging to a group are being used
+    for (pair<int, int> entry : input_groups) {
+
+        group_no = entry.first;
+        if(stats.group_to_info[group_no][num_relation_str] != entry.second) {
             cout << "Cannot perform operation" << endl;
             exit(1);
         }
@@ -182,6 +189,8 @@ double Statistics::EstimationHelper(struct AndList *parseTree, char *relNames[],
     AndList *and_list = parseTree;
     OrList *or_list = NULL;
     ComparisonOp *comparison_op = NULL;
+    Statistics copy;
+    Statistics pointedAt;
     // Iterate over Andlist
     while(and_list != NULL) {
         or_list = and_list->left;
@@ -190,16 +199,22 @@ double Statistics::EstimationHelper(struct AndList *parseTree, char *relNames[],
         Statistics *prev_or_result = NULL;
         // Iterate over the OrList
         while(or_list != NULL) {
+
             comparison_op = or_list->left;
             // Perform a join
             if(comparison_op->left->code == NAME & comparison_op->right->code == NAME) {
                 
-                string att1_str(comparison_op->left->value);
-                string att2_str(comparison_op->right->value);
+                
+                string att1_str(comparison_op->left->value);  // s.s_nationkey
+                string att2_str(comparison_op->right->value); // ps.s_nationkey
 
-                int group1 = GetGroupNo(input_groups, att1_str);
-                int group2 = GetGroupNo(input_groups, att2_str);
+                int group1 = GetGroupNo(input_groups, att1_str, stats);
+                int group2 = GetGroupNo(input_groups, att2_str, stats);
 
+                parseAttributeName(att1_str);
+                parseAttributeName(att2_str);
+
+                // cout << "[Stats.cc] Performing Join \n";
                 // If groups are same, do nothing
                 if(group1 == group2) {
                     or_list = or_list->rightOr;
@@ -211,21 +226,23 @@ double Statistics::EstimationHelper(struct AndList *parseTree, char *relNames[],
                 string num_relation_str("num_relations");
 
                 // Assuming it will automatically truncate division result
-                int ratio1 = stats.group_to_info[group1][num_tuples_str] / stats.group_to_info[group1][att1_str];
-                int ratio2 = stats.group_to_info[group2][num_tuples_str] / stats.group_to_info[group2][att2_str];
+                double ratio1 = (1.0*stats.group_to_info[group1][num_tuples_str]) / stats.group_to_info[group1][att1_str];
+                double ratio2 = (1.0*stats.group_to_info[group2][num_tuples_str]) / stats.group_to_info[group2][att2_str];
+
+                // cout << "[Stats.cc] Ratios found \n";
                 int unique_count = min(stats.group_to_info[group1][att1_str], stats.group_to_info[group2][att2_str]);
 
                 // Updated no of tuples
                 int updated_num_tuples = ratio1 * ratio2 * unique_count;
 
                 // Add attributes from group 1
-                for (auto it=stats.group_to_info[group1].begin(); it!=stats.group_to_info[group1].end(); ++it) {
-                    updated_info[it->first] = min(updated_num_tuples, it->second);
+                for (pair<string, int> entry : stats.group_to_info[group1]) {
+                    updated_info[entry.first] = min(updated_num_tuples, entry.second);
                 }
 
                 // Add attributes from group 2
-                for (auto it=stats.group_to_info[group2].begin(); it!=stats.group_to_info[group2].end(); ++it) {
-                    updated_info[it->first] = min(updated_num_tuples, it->second);
+                for (pair<string, int> entry : stats.group_to_info[group2]) {
+                    updated_info[entry.first] = min(updated_num_tuples, entry.second);
                 }
 
                 // Update join attributes. This will always be the smaller value
@@ -245,10 +262,13 @@ double Statistics::EstimationHelper(struct AndList *parseTree, char *relNames[],
 
                 // Update rel_to_group and delete entry from group_to_info
                 stats.group_to_info.erase(max_group);
-                for (auto it=stats.rel_to_group.begin(); it!=stats.rel_to_group.end(); ++it) {
+
+                input_groups.erase(max_group);
+
+                for (pair<string, int> entry : stats.rel_to_group) {
                     // There can be multiple such relations
-                    if(it->second == max_group) {
-                        stats.rel_to_group[it->first] = min_group;
+                    if(entry.second == max_group) {
+                        stats.rel_to_group[entry.first] = min_group;
                     }
                 }
 
@@ -258,25 +278,36 @@ double Statistics::EstimationHelper(struct AndList *parseTree, char *relNames[],
             } else { // Perform selection
 
                 // Create a copy of original
-                Statistics copy = stats;
+                copy = stats;
+                // stats.Write("testStats.txt");
 
                 // Perform operation on the copy
-                int group = -1;
+                group_no = -1;
                 string attr_str(comparison_op->left->value);
+
+
                 string num_tuples_str("num_tuples");
                 if(comparison_op->left->code == NAME) {
-                    group = GetGroupNo(input_groups, attr_str);
+                    group_no = GetGroupNo(input_groups, attr_str, stats);
                 }
+
+                parseAttributeName(attr_str);
+                // cout << "[Stats.cc] Not a Join - Grp No = " << group_no << " \nAttr_name = " << attr_str <<" \n";
+
                 double ratio = -1;
                 if(comparison_op->code == LESS_THAN || comparison_op->code == GREATER_THAN) {
                     ratio = 1.0/3;
                 } else {
+                    // cout << "[Stats.cc] NO of distinct values = " << copy.group_to_info[group_no][attr_str] << endl;
                     ratio = 1.0/copy.group_to_info[group_no][attr_str];
                 }
 
-                int updated_num_tuples = ratio * copy.group_to_info[group][num_tuples_str];
+                int updated_num_tuples = ratio * copy.group_to_info[group_no][num_tuples_str];
+                // cout << "updated No ********** " << updated_num_tuples << endl;
+                // cout << "Ratio = " << ratio << endl;
+                
                 // Modify attributes
-                for (pair<string, int> entry : copy.group_to_info[group]) {
+                for (pair<string, int> entry : copy.group_to_info[group_no]) {
                     copy.group_to_info[group_no][entry.first] =  min(entry.second, updated_num_tuples);
                 }
 
@@ -288,28 +319,32 @@ double Statistics::EstimationHelper(struct AndList *parseTree, char *relNames[],
 
                     // Calculate  1. if the attribute distinct count should be added. 2. Intersection
                     int intersection = 0;
-                    int attr_distinct_count = max(copy.group_to_info[group][attr_str],
-                                                prev_or_result->group_to_info[group][attr_str]);
-                    if(prev_or_result->group_to_info[group_no][attr_str] != group_to_info[group_no][attr_str]) {
-                        attr_distinct_count = copy.group_to_info[group][attr_str] + prev_or_result->group_to_info[group][attr_str];
+                    int attr_distinct_count = max(copy.group_to_info[group_no][attr_str],
+                                                prev_or_result->group_to_info[group_no][attr_str]);
+                    if(prev_or_result->group_to_info[group_no][attr_str] != stats.group_to_info[group_no][attr_str]) {
+                        attr_distinct_count = copy.group_to_info[group_no][attr_str] + prev_or_result->group_to_info[group_no][attr_str];
                     } else { // This was not used previously
-                        intersection = prev_or_result->group_to_info[group][num_tuples_str] * ratio;
+                        intersection = prev_or_result->group_to_info[group_no][num_tuples_str] * ratio;
+                        
                     }
+                    // cout << "Num tuples from prev = " << prev_or_result->group_to_info[group_no][num_tuples_str]
+                    //             <<  "\nIntersection value = " << intersection << endl;
 
                     // Calculate resultant tuples
                     updated_num_tuples = copy.group_to_info[group_no][num_tuples_str] + 
                                          prev_or_result->group_to_info[group_no][num_tuples_str] - intersection;
 
-                    for (pair<string, int> entry : copy.group_to_info[group]) {
+                    for (pair<string, int> entry : copy.group_to_info[group_no]) {
                         prev_or_result->group_to_info[group_no][entry.first] = max(prev_or_result->group_to_info[group_no][entry.first],
                                                                                   entry.second); 
                     }
 
-                    prev_or_result->group_to_info[group][num_tuples_str] = updated_num_tuples;
-                    prev_or_result->group_to_info[group][attr_str] = attr_distinct_count;
+                    prev_or_result->group_to_info[group_no][num_tuples_str] = updated_num_tuples;
+                    prev_or_result->group_to_info[group_no][attr_str] = attr_distinct_count;
                     
                 } else {
-                    prev_or_result = &copy;
+                    pointedAt = copy;
+                    prev_or_result = &pointedAt;
                 }
 
             }
@@ -332,11 +367,20 @@ double Statistics::EstimationHelper(struct AndList *parseTree, char *relNames[],
 
 }
 
-int Statistics::GetGroupNo(unordered_map<int, int> input_groups, string att_name) {
+int Statistics::GetGroupNo(unordered_map<int, int> input_groups, string att_name, Statistics& stats) {
     int group_no = -1;
+
+    size_t found = att_name.find(".");
+
+    if(found != string::npos){
+        string rel_name = att_name.substr(0 , found);
+        att_name = att_name.substr(found+1);
+        return stats.rel_to_group[rel_name];
+    }
+
     for (auto it=input_groups.begin(); it!=input_groups.end(); ++it) {
         group_no = it->first;
-        if(group_to_info[group_no].find(att_name) != group_to_info[group_no].end()) {
+        if(stats.group_to_info[group_no].find(att_name) != stats.group_to_info[group_no].end()) {
             return group_no;
         }
     }
@@ -348,6 +392,7 @@ double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numT
 {
     Statistics copy = *this;
     EstimationHelper(parseTree, relNames, numToJoin, copy);
+    copy.Write("testStats.txt");
     if(numToJoin > 0) {
         string relname_str(relNames[0]);
         string num_tuples_str("num_tuples");
