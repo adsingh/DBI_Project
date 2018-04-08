@@ -1,4 +1,4 @@
-CC = g++ -O2 -Wno-deprecated 
+CC = g++ -std=c++14 -O2 -Wno-deprecated 
 
 tag = -i
 
@@ -36,6 +36,7 @@ Schema.o: Schema.cc
 y.tab.o: Parser.y
 	yacc -d Parser.y
 	sed $(tag) y.tab.c -e "s/  __attribute__ ((__unused__))$$/# ifndef __cplusplus\n  __attribute__ ((__unused__));\n# endif/" 
+	sed -i y.tab.h -e "/int yyparse (void);/d"
 	g++ -c y.tab.c
 
 lex.yy.o: Lexer.l
