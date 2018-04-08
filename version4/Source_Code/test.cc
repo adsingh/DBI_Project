@@ -115,7 +115,7 @@ void q0 (){
 	yy_scan_string(cnf);
 	yyparse();
 	double dummy = s1.Estimate(final, relName, 2);
-	cout << "\ndummy = " << dummy << endl;
+	
 	if(fabs(dummy*3.0-result) >0.1)
 	{
 		cout<<"Read or write or last apply is not correct\n";
@@ -522,7 +522,7 @@ void q10 (){
 	Statistics s;
         char *relName[] = { "customer", "orders", "lineitem","nation"};
 
-	s.Read(fileName);
+	// s.Read(fileName);
 	
 	s.AddRel(relName[0],150000);
 	s.AddAtt(relName[0], "c_custkey",150000);
@@ -587,8 +587,7 @@ void q11 (){
 	yyparse();
 	
 	double result = s.Estimate(final, relName,2);
-
-	if(fabs(result-21432.9)>1)
+	if(fabs(result-21432.9)>0.5)
 		cout<<"error in estimating Q11\n";
 	else{
 		cout << "Congratulations Q11 working\n";
