@@ -136,19 +136,22 @@ int main () {
 
 	cout << "********   AND LIST ***********\n";
 	PrintAndList(boolean);
+	cout << "\n\n";
 
 	cout << "********   Table LIST ***********\n";
 	printTableList(tables);
-	cout << endl;
+	cout << "\n\n";
 
 	cout << "********   Name LIST groupingAtts ***********\n";
 	printNameList(groupingAtts);
+	cout << "\n\n";
 
 	cout << "********   Name LIST attsToSelect***********\n";
 	printNameList(attsToSelect);
+	cout << "\n\n";
 
 	cout << "********  distinctAtts ***********\n";
-	cout << distinctAtts << endl;
+	cout << distinctAtts << "\n\n";
 
 	cout << "********   distinctFunc ***********\n";
 	cout << distinctFunc << endl;
