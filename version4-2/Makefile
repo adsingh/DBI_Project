@@ -8,7 +8,7 @@ tag = -n
 endif
 
 main:   y.tab.o lex.yy.o main.o
-	$(CC) -o main y.tab.o lex.yy.o main.o -lfl
+	$(CC) -o main.out y.tab.o lex.yy.o main.o -lfl
 	
 main.o : main.cc
 	$(CC) -g -c main.cc
