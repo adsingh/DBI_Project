@@ -12,5 +12,8 @@ y.tab.c-e
 y.tab.c
 y.tab.h
 lex.yy.c
+lex.yyfunc.c
+yyfunc.tab.c
+yyfunc.tab.h
 
 sortedRuns.bin
