@@ -1,6 +1,12 @@
 
 #include <iostream>
 #include "ParseTree.h"
+#include <unordered_map>
+#include <vector>
+#include "Schema.h"
+#include <string>
+#include <sstream>
+#include <set>
 
 using namespace std;
 
@@ -35,7 +41,7 @@ void printTableList(struct TableList * list){
 void PrintOperand(struct Operand *pOperand){
         if(pOperand!=NULL)
         {
-                cout<<pOperand->value<<" ";
+                cout <<pOperand->value<<" ";
         }
         else
                 return;
@@ -71,7 +77,7 @@ void PrintOrList(struct OrList *pOr){
 
                 if(pOr->rightOr)
                 {
-                        cout<<" OR ";
+                        cout <<" OR ";
                         PrintOrList(pOr->rightOr);
                 }
         }
@@ -88,7 +94,7 @@ void PrintAndList(struct AndList *pAnd){
                 PrintOrList(pOr);
                 if(pAnd->rightAnd)
                 {
-                        cout<<" AND ";
+                        cout <<" AND ";
                         PrintAndList(pAnd->rightAnd);
                 }
         }
@@ -127,6 +133,8 @@ void printFuncOperator(struct FuncOperator * op, int level){
 
 }
 
+void parseAndList(struct AndList * andList);
+
 int main () {
 
 	yyparse();
@@ -153,4 +161,88 @@ int main () {
 
 	cout << "********   distinctFunc ***********\n";
 	cout << distinctFunc << endl;
+
+	parseAndList(boolean);
+	
+}
+
+void parseAndList(struct AndList * andList){
+	typedef struct OrList orList;
+
+	unordered_map<char*, Schema*> tableToSchema;
+	vector<orList*> joinOps;
+	Schema* sch;
+	orList *left;
+	ComparisonOp *compOp;
+	unordered_map<char*, vector<orList*>> cnf_map ;
+
+	while(tables != NULL){
+		sch = new Schema("catalog",tables->tableName);
+		tableToSchema[tables->tableName] = sch;
+		tables = tables->next;
+	}
+	
+	set<char*> tblNameSet; 
+
+	while(andList != NULL){
+
+		left = andList->left;
+		
+		while(left != NULL){
+			compOp = left->left;
+			if(compOp->left->code == NAME && compOp->right->code == NAME){
+				joinOps.push_back(andList->left);
+			}
+			else{
+				char* attName = compOp->left->code == NAME ? compOp->left->value : compOp->right->value;
+				for(pair<char*, Schema*> entry : tableToSchema){
+					if(entry.second->Find(attName) != -1){
+						tblNameSet.insert(entry.first);
+					}
+				}
+			}
+			left = left->rightOr;
+		}
+
+		if(tblNameSet.size() > 1){
+			joinOps.push_back(andList->left);
+		}
+		else{
+			cnf_map[*tblNameSet.begin()].push_back(andList->left);
+		}
+		andList = andList->rightAnd;
+		tblNameSet.clear();
+	}
+
+	AndList* sfAndList;
+
+
+
+	for(pair<char*, vector<orList*>> entry : cnf_map){
+		cout << "vector size: " << entry.second.size() << endl;
+		int index = 0;
+
+		sfAndList = new AndList();
+		AndList* dummy = sfAndList;
+
+		for(orList* l : entry.second){
+
+			dummy->rightAnd = new AndList();
+			dummy->rightAnd->left = l;
+			dummy = dummy->rightAnd;
+		}
+
+		// sfAndList->rightAnd;
+
+		PrintAndList(sfAndList->rightAnd);
+		cout << endl;
+
+		// Create CNF here
+
+
+		// Create Select FIle Node
+
+
+	}
+
 }
