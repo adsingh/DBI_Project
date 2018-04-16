@@ -5,6 +5,7 @@
 #include <vector>
 #include "Schema.h"
 #include <string>
+#include <string.h>
 #include <sstream>
 #include <set>
 
@@ -135,6 +136,8 @@ void printFuncOperator(struct FuncOperator * op, int level){
 
 void parseAndList(struct AndList * andList);
 
+void getAttName(char** strPtr);
+
 int main () {
 
 	yyparse();
@@ -166,6 +169,15 @@ int main () {
 	
 }
 
+void getAttName(char** strPtr){
+	int strLen = strlen(*strPtr);
+	char tmp[strLen];
+	strcpy(tmp, *strPtr);
+	strtok(tmp, ".");
+	*strPtr = (char*) malloc(strLen);
+	strcpy(*strPtr, strtok(NULL, "."));
+}
+
 void parseAndList(struct AndList * andList){
 	typedef struct OrList orList;
 
@@ -191,10 +203,22 @@ void parseAndList(struct AndList * andList){
 		while(left != NULL){
 			compOp = left->left;
 			if(compOp->left->code == NAME && compOp->right->code == NAME){
+
+				// getAttName(&(compOp->left->value));
+				// getAttName(&(compOp->right->value));
 				joinOps.push_back(andList->left);
 			}
 			else{
-				char* attName = compOp->left->code == NAME ? compOp->left->value : compOp->right->value;
+				char* attName;
+				if(compOp->left->code == NAME){
+					getAttName(&(compOp->left->value));
+					attName = compOp->left->value;
+				}
+				else if(compOp->right->code == NAME){
+					getAttName(&(compOp->right->value));
+					attName = compOp->right->value;
+				}
+
 				for(pair<char*, Schema*> entry : tableToSchema){
 					if(entry.second->Find(attName) != -1){
 						tblNameSet.insert(entry.first);
@@ -207,7 +231,7 @@ void parseAndList(struct AndList * andList){
 		if(tblNameSet.size() > 1){
 			joinOps.push_back(andList->left);
 		}
-		else{
+		else if(tblNameSet.size() == 1){
 			cnf_map[*tblNameSet.begin()].push_back(andList->left);
 		}
 		andList = andList->rightAnd;
@@ -215,8 +239,6 @@ void parseAndList(struct AndList * andList){
 	}
 
 	AndList* sfAndList;
-
-
 
 	for(pair<char*, vector<orList*>> entry : cnf_map){
 		cout << "vector size: " << entry.second.size() << endl;
@@ -241,7 +263,6 @@ void parseAndList(struct AndList * andList){
 
 
 		// Create Select FIle Node
-
 
 	}
 
