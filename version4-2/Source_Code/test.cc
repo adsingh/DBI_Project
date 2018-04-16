@@ -190,7 +190,7 @@ void parseAndList(struct AndList * andList){
 
 	while(tables != NULL){
 		sch = new Schema("catalog",tables->tableName);
-		tableToSchema[tables->tableName] = sch;
+		tableToSchema[tables->aliasAs] = sch;
 		tables = tables->next;
 	}
 	
