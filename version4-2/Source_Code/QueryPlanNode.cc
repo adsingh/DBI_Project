@@ -1,5 +1,8 @@
 #include "QueryPlanNode.h"
 
+SelectFileNode::SelectFileNode () {
+    
+}
 SelectFileNode::SelectFileNode (char* fileName, int outPipeID, Schema *outSchema, CNF *selOp, Record *literal) : QueryPlanNode() {
    this->fileName = fileName;
    this->outPipeID = outPipeID;

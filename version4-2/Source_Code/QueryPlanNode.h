@@ -8,9 +8,9 @@ class QueryPlanNode {
 	protected:
 	int outPipeID;
 	Schema *outSchema;
-	QueryPlanNode *next;
 
 	public:
+	QueryPlanNode *next;
 	virtual void Print () = 0;
 };
 
@@ -23,6 +23,7 @@ class SelectFileNode : public QueryPlanNode {
 
 	public:
 	void Print ();
+	SelectFileNode ();
 	SelectFileNode (char *fileName, int outPipeID, Schema *outSchema, CNF *selOp, Record *literal);
 };
 
