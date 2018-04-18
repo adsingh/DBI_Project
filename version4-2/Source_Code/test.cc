@@ -11,6 +11,8 @@
 #include "QueryPlanNode.h"
 #include <list>
 #include "Statistics.h"
+#include <map>
+#include <istream>
 
 using namespace std;
 
@@ -141,6 +143,8 @@ void parseAndList(struct AndList * andList);
 
 string getAttName(char** strPtr);
 
+Schema* CombineSchema(Schema* schema1, Schema* schema2);
+
 int main () {
 
 	yyparse();
@@ -190,11 +194,13 @@ void parseAndList(struct AndList * andList){
 	Schema* sch;
 	orList *left;
 	ComparisonOp *compOp;
-	unordered_map<char*, vector<orList*>> cnf_map ;
+	unordered_map<char*, vector<orList*>> sf_cnf_map ;
 	unordered_map<char*, char*> aliasToTable;
+	unordered_map<char*, SelectFileNode*> aliasToSfNode;
 
 	// c1:n1 -> c_custkey = n_nationkey
 	unordered_map<string, vector<orList*>> join_map ;
+	map<string, AndList*> join_cnf_map;
 
 	while(tables != NULL){
 		sch = new Schema("catalog",tables->tableName);
@@ -255,7 +261,7 @@ void parseAndList(struct AndList * andList){
 		}
 		else if(tblNameSet.size() == 1){
 			rel = (char*)(*tblNameSet.begin()).c_str();
-			cnf_map[rel].push_back(andList->left);
+			sf_cnf_map[rel].push_back(andList->left);
 		}
 		andList = andList->rightAnd;
 		tblNameSet.clear();
@@ -270,7 +276,7 @@ void parseAndList(struct AndList * andList){
 	int pipeID = 1;
 	unordered_map<char*, int> aliasToPipeID;
 
-	for(pair<char*, vector<orList*>> entry : cnf_map){
+	for(pair<char*, vector<orList*>> entry : sf_cnf_map){
 		cout << "vector size: " << entry.second.size() << endl;
 		int index = 0;
 
@@ -296,10 +302,12 @@ void parseAndList(struct AndList * andList){
 		cnf->Print();
 
 		// Create Select File Node
-		// SelectFile is going to expect an opened alias.bin file in current folder
 		currentNode->next = new SelectFileNode(strcat(aliasToTable[entry.first], ".bin"), pipeID, tableToSchema[entry.first], cnf, literal);
 		aliasToPipeID[entry.first] = pipeID++;
 		currentNode = currentNode->next;
+
+		// Adding entry in aliasToSFNode
+		aliasToSfNode[entry.first] = (SelectFileNode*)currentNode;
 
 	}
 
@@ -319,6 +327,9 @@ void parseAndList(struct AndList * andList){
 
 		// AndList is present in dummyNode->nextAnd
 		join_candidates.push_back(dummyNode->rightAnd);
+				
+		// Filling ordered map
+		join_cnf_map[entry.first] = dummyNode->rightAnd;
 	}
 
 	// Assuming text file is already present
@@ -326,13 +337,174 @@ void parseAndList(struct AndList * andList){
 	s.Read("Statistics.txt");
 
 	int bestEstimate = INT_MAX;
-	list<AndList*>::iterator list_it;
-	while(join_candidates.size() > 0) {
-		list_it = join_candidates.begin();
-		while(list_it != join_candidates.end()){
-			// Need relnames and numtojoin for invoking estimate
-			// Might need to store a map of AndList and relnames
+	int size = join_map.size();
+	
+	set<string> joined_rel;
+	string bestEntry;
+	AndList* tempAndList;
+	for(int i = 0 ; i < size; i++) {
+		char* rel_name[2+i];
+
+		bestEstimate = INT_MAX;
+		for(pair<string, vector<orList*>> entry: join_map) {
+			int index = 0;
+			stringstream ss(entry.first);
+			string item1, item2;
+			getline(ss, item1, ':');
+			getline(ss, item2, ':');
+			
+			if(joined_rel.count(item1) != 0 || joined_rel.count(item2) != 0) {
+				for(auto rel:joined_rel) {
+					rel_name[index++] = (char*)rel.c_str();
+				}
+				if(joined_rel.count(item1) == 0) {
+					rel_name[index++] = (char*)item1.c_str();
+				} else {
+					rel_name[index++] = (char*) item2.c_str();
+				}
+				
+			} else {
+				rel_name[index++] = (char*) item1.c_str();
+				rel_name[index++] = (char*) item2.c_str();
+			}
+
+			int estimate = s.Estimate(join_cnf_map[entry.first], rel_name, index);
+			if(estimate < bestEstimate) {
+				bestEstimate = estimate;
+				bestEntry = entry.first;
+			}
 		}
+
+		// Remove the entry from the inner map
+		// so that it is not used in future cases
+		join_map.erase(bestEntry);
+
+		// Delete and re insert into join_cnf_map. to maintain final order
+		tempAndList = join_cnf_map[bestEntry];
+		join_cnf_map.erase(bestEntry);
+		join_cnf_map[bestEntry] = tempAndList;
+
+		// Best estimates Found. Adding rel names to set
+		stringstream ss(bestEntry);
+		string item;
+		while (getline(ss, item, ':')) {
+			if(joined_rel.count(item) == 0) {
+				joined_rel.insert(item);
+			}
+		}
+
 	}
 
+	// At this stage, join_cnf_map should have the correct order
+	unordered_map<string, int> relToGroupNo;
+	unordered_map<int, JoinNode*> groupToJoinNode;
+	string relation1;
+	string relation2;
+	int groupRel1 = -1;
+	int groupRel2 = -1;
+	int groupNo = 0;
+	JoinNode *join_node;
+	Schema *schema1, *schema2, *outSchema;
+	int inPipe1ID = -1;
+	int inPipe2ID = -1;
+	int outPipeID = -1;
+	for(pair<string, AndList*> entry: join_cnf_map) {
+		// Read relation names
+		stringstream ss(entry.first);
+		getline(ss, relation1, ':');
+		getline(ss, relation2, ':'); 
+
+		// Find groupNo if already present in map
+		groupRel1 = -1;
+		groupRel2 = -1;
+		if(relToGroupNo.count(relation1) > 0) {
+			groupRel1 = relToGroupNo[relation1];
+		}
+		if(relToGroupNo.count(relation2) > 0) {
+			groupRel2 = relToGroupNo[relation2];
+		}
+
+		// Get appropriate inputs for join
+		if(groupRel1 == -1) {
+			// If was not joined previously, use its SelectFileNode
+			inPipe1ID = aliasToSfNode[(char*)relation1.c_str()]->outPipeID;
+			schema1 = aliasToSfNode[(char*)relation1.c_str()]->outSchema;
+
+		} else { // Else use info from previous join
+			inPipe1ID = groupToJoinNode[groupRel1]->outPipeID;
+			schema1 = groupToJoinNode[groupRel1]->outSchema;
+		}
+
+		if(groupRel2 == -1) {
+			inPipe2ID = aliasToSfNode[(char*)relation2.c_str()]->outPipeID;
+			schema2 = aliasToSfNode[(char*)relation2.c_str()]->outSchema;
+		} else{
+			inPipe2ID = groupToJoinNode[groupRel2]->outPipeID;
+			schema2 = groupToJoinNode[groupRel2]->outSchema;
+		}
+
+		// create cnf and literal using the 2 schemas
+		cnf = new CNF();
+		literal = new Record();
+		cnf->GrowFromParseTree(entry.second, schema1, schema2, *literal);
+
+		// Create Combined Schema
+		outSchema = CombineSchema(schema1, schema2);
+
+		// Create JoinNode
+		join_node = new JoinNode(inPipe1ID, inPipe2ID, pipeID++, outSchema, cnf, literal);
+		currentNode->next = join_node;
+		currentNode = currentNode->next;
+
+		// Update relToGroupNo and groupToJoinNode accordingly
+		
+		// If both relations are not previously joined before
+		// add new entries in both maps
+		if(groupRel1 == -1 && groupRel2 == -1) {
+			relToGroupNo[relation1] = groupNo;
+			relToGroupNo[relation2] = groupNo;			
+			groupToJoinNode[groupNo] = join_node;
+			groupNo++;
+		} else if(groupRel1 == -1) { // relation2 was previously joined
+			relToGroupNo[relation1] = relToGroupNo[relation2];
+			groupToJoinNode[relToGroupNo[relation1]] = join_node;
+		} else if(groupRel2 == -1) { // relation1 was previously joined
+			relToGroupNo[relation2] = relToGroupNo[relation1];
+			groupToJoinNode[relToGroupNo[relation2]] = join_node;
+		} else { // both are previously joined 
+			// Update the smaller group
+			// Delete the larger group
+			int minGroup = min(relToGroupNo[relation1], relToGroupNo[relation2]);
+			int maxGroup = max(relToGroupNo[relation1], relToGroupNo[relation2]);
+
+			for(pair<string, int> entry : relToGroupNo) {
+				if(entry.second == maxGroup) {
+					relToGroupNo[entry.first] = minGroup;
+				}
+			}
+
+			groupToJoinNode[minGroup] = join_node;
+			groupToJoinNode.erase(maxGroup);
+		}
+
+	}
+	
+
+}
+
+Schema* CombineSchema(Schema* schema1, Schema* schema2) {
+	int total_atts = schema1->GetNumAtts() + schema2->GetNumAtts();
+	Attribute* result_atts = new Attribute[total_atts];
+	int index = 0;
+	Attribute* atts1 = schema1->GetAtts();
+	Attribute* atts2 = schema2->GetAtts();
+	for (int i = 0 ; i < schema1->GetNumAtts(); i++) {
+		result_atts[index++] = atts1[i];
+	}
+	for (int i = 0 ; i < schema2->GetNumAtts(); i++) {
+		result_atts[index++] = atts2[i];
+	}
+
+	Schema result_schema("joined_sch", total_atts, result_atts );
+	return &result_schema;
 }
