@@ -40,9 +40,9 @@ class SelectPipeNode : public QueryPlanNode {
     Record *literal;
 
 	public:
-	int inPipeID;
-	CNF *selOp;
-    Record *literal;
+	// int inPipeID;
+	// CNF *selOp;
+    // Record *literal;
 	void Print ();
 	SelectPipeNode (int inPipeID, int outPipeID, Schema *outSchema, CNF *selOp, Record *literal);
 };

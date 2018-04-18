@@ -13,6 +13,7 @@
 #include "Statistics.h"
 #include <map>
 #include <istream>
+#include <climits>
 
 using namespace std;
 
@@ -398,8 +399,8 @@ void parseAndList(struct AndList * andList){
 	// At this stage, join_cnf_map should have the correct order
 	unordered_map<string, int> relToGroupNo;
 	unordered_map<int, JoinNode*> groupToJoinNode;
-	string relation1;
-	string relation2;
+	// string relation1;
+	// string relation2;
 	int groupRel1 = -1;
 	int groupRel2 = -1;
 	int groupNo = 0;
