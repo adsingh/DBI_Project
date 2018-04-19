@@ -331,6 +331,10 @@ void parseAndList(struct AndList * andList){
 				
 		// Filling ordered map
 		join_cnf_map[entry.first] = dummyNode->rightAnd;
+
+		// ** TODO split entry.first and Check whether
+		// both aliases are present in aliasToSfNode map
+		// if not create an SfNode using attribute in orlist
 	}
 
 	// Assuming text file is already present
