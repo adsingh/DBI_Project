@@ -142,7 +142,7 @@ void printFuncOperator(struct FuncOperator * op, int level){
 
 void parseAndList(struct AndList * andList);
 
-string getRelName(char** strPtr);
+string getAttName(char** strPtr);
 
 Schema* CombineSchema(Schema* schema1, Schema* schema2);
 
@@ -177,74 +177,27 @@ int main () {
 	
 }
 
-string getRelName(char** strPtr){
+string getAttName(char** strPtr){
 	int strLen = strlen(*strPtr);
 	char tmp[strLen];
 	strcpy(tmp, *strPtr);
 	string alias(strtok(tmp, "."));
-	// *strPtr = (char*) malloc(strLen);
-	// strcpy(*strPtr, strtok(NULL, "."));
+	*strPtr = (char*) malloc(strLen);
+	strcpy(*strPtr, strtok(NULL, "."));
 	return alias;
-}
-
-AndList * nameToAndList(char * name){
-	AndList* andList = new AndList();
-	Operand *left = new Operand();
-	left->code = NAME;
-	left->value = name;
-	ComparisonOp *SFCompOp = new ComparisonOp();
-	SFCompOp->code = EQUALS;
-	SFCompOp->left = left;
-	SFCompOp->right = left;
-	OrList *SFOrList = new OrList();
-	SFOrList->left = SFCompOp;
-	SFOrList->rightOr = NULL;
-	andList->left = SFOrList;
-	return andList;
-}
-
-void modifySchemaAttsNames(Schema** sch, string aliasAs){
-	
-	int numAtts = (*sch)->GetNumAtts();
-	Attribute* atts = (*sch)->GetAtts();
-	Attribute* attsRes = new Attribute[numAtts];
-
-	for(int i = 0 ; i < numAtts; i++){
-		// string attName(atts[i].name);
-		string temp(aliasAs + "." + atts[i].name);
-		attsRes[i].myType = atts[i].myType;
-		attsRes[i].name = new char[temp.length() + 1];
-		strcpy(attsRes[i].name, temp.c_str());
-		//cout <<  " ********* : "<< attsRes[i].name << "  " << attsRes[i].myType << endl;
-	}
-	*sch = new Schema("schema", numAtts, attsRes);
-}
-
-void PrintSchema(Schema* sch){
-	if(sch == NULL){
-		cout << "Schema is empty\n";
-		return;
-	}
-	int numAtts = sch->GetNumAtts();
-	Attribute* attsRes = sch->GetAtts();
-
-	for(int i = 0 ; i < numAtts; i++){
-		// string attName(atts[i].name);
-		cout <<  " ********* : "<< attsRes[i].name << "  " << attsRes[i].myType << endl;
-	}
 }
 
 void parseAndList(struct AndList * andList){
 	typedef struct OrList orList;
 
-	unordered_map<string, Schema*> aliasToSchema;
+	unordered_map<char*, Schema*> tableToSchema;
 	vector<orList*> joinOps;
 	Schema* sch;
 	orList *left;
 	ComparisonOp *compOp;
-	unordered_map<string, vector<orList*>> sf_cnf_map ;
-	unordered_map<string, string> aliasToTable;
-	unordered_map<string, SelectFileNode*> aliasToSfNode;
+	unordered_map<char*, vector<orList*>> sf_cnf_map ;
+	unordered_map<char*, char*> aliasToTable;
+	unordered_map<char*, SelectFileNode*> aliasToSfNode;
 
 	// c1:n1 -> c_custkey = n_nationkey
 	unordered_map<string, vector<orList*>> join_map ;
@@ -252,22 +205,16 @@ void parseAndList(struct AndList * andList){
 
 	while(tables != NULL){
 		sch = new Schema("catalog",tables->tableName);
-		string aliasName(tables->aliasAs);
-		string tableName(tables->tableName);
-		modifySchemaAttsNames(&sch, aliasName);
-		aliasToSchema[aliasName] = sch;
-		aliasToTable[aliasName] = tableName;
+		tableToSchema[tables->aliasAs] = sch;
 		tables = tables->next;
+		aliasToTable[tables->aliasAs] = tables->tableName;
 	}
-
-	cout << "[test.cc] Created Schema Map\n";
 	
 	set<string> tblNameSet; 
 	string relation1;
 	string relation2;
 	char* rel;
 	stringstream joinKey;
-
 	while(andList != NULL){
 
 		left = andList->left;
@@ -276,22 +223,22 @@ void parseAndList(struct AndList * andList){
 			compOp = left->left;
 			if(compOp->left->code == NAME && compOp->right->code == NAME){
 				// Remove . from attribute names AND also get alias
-				relation1 = getRelName(&(compOp->left->value));
-				relation2 = getRelName(&(compOp->right->value));
+				relation1 = getAttName(&(compOp->left->value));
+				relation2 = getAttName(&(compOp->right->value));
 				join_map[relation1 + ":" +relation2].push_back(andList->left);
 			}
 			else{
 				char* attName;
 				if(compOp->left->code == NAME){
-					// getAttName(&(compOp->left->value));
+					getAttName(&(compOp->left->value));
 					attName = compOp->left->value;
 				}
 				else if(compOp->right->code == NAME){
-					// getAttName(&(compOp->right->value));
+					getAttName(&(compOp->right->value));
 					attName = compOp->right->value;
 				}
 
-				for(pair<string, Schema*> entry : aliasToSchema){
+				for(pair<char*, Schema*> entry : tableToSchema){
 					if(entry.second->Find(attName) != -1){
 						tblNameSet.insert(entry.first);
 					}
@@ -328,11 +275,9 @@ void parseAndList(struct AndList * andList){
 	QueryPlanNode *dummy = new SelectFileNode();
 	QueryPlanNode *currentNode = dummy;
 	int pipeID = 1;
-	unordered_map<string, int> aliasToPipeID;
+	unordered_map<char*, int> aliasToPipeID;
 
-	cout << "[test.cc] Created SF and Join CNF Maps\n";
-
-	for(pair<string, vector<orList*>> entry : sf_cnf_map){
+	for(pair<char*, vector<orList*>> entry : sf_cnf_map){
 		cout << "vector size: " << entry.second.size() << endl;
 		int index = 0;
 
@@ -354,16 +299,11 @@ void parseAndList(struct AndList * andList){
 		// Create CNF here
 		cnf = new CNF();
 		literal = new Record();
-		if(aliasToSchema.find(entry.first) == aliasToSchema.end()){
-			cout << "Schema not present for the relation : " << entry.first << endl;
-			exit(1);
-		}
-
-		cnf->GrowFromParseTree(sfAndList->rightAnd, aliasToSchema[entry.first], *literal);
-		// cnf->Print();
+		cnf->GrowFromParseTree(sfAndList->rightAnd, tableToSchema[entry.first], *literal);
+		cnf->Print();
 
 		// Create Select File Node
-		currentNode->next = new SelectFileNode((char*)(aliasToTable[entry.first] + ".bin").c_str(), pipeID, aliasToSchema[entry.first], cnf, literal);
+		currentNode->next = new SelectFileNode(strcat(aliasToTable[entry.first], ".bin"), pipeID, tableToSchema[entry.first], cnf, literal);
 		aliasToPipeID[entry.first] = pipeID++;
 		currentNode = currentNode->next;
 
@@ -371,7 +311,7 @@ void parseAndList(struct AndList * andList){
 		aliasToSfNode[entry.first] = (SelectFileNode*)currentNode;
 
 	}
-	
+
 	// Create And Lists for joins
 	AndList *jAndList;
 	AndList *dummyNode;
@@ -391,70 +331,11 @@ void parseAndList(struct AndList * andList){
 				
 		// Filling ordered map
 		join_cnf_map[entry.first] = dummyNode->rightAnd;
-
-		// ** TODO split entry.first and Check whether
-		// both aliases are present in aliasToSfNode map
-		// if not create an SfNode using attribute in orlist
-		stringstream ss(entry.first);
-		string alias1, alias2;
-		getline(ss, alias1, ':');
-		getline(ss, alias2, ':');
-		if(aliasToSfNode.find(alias1) == aliasToSfNode.end()){
-			cnf = new CNF();
-			literal = new Record();
-
-			// Create ANDLIST
-			// char* name = (char*)alias1.c_str();
-			char* name = aliasToSchema[alias1]->GetAtts()[0].name;
-			// cout << "[test.cc] jugaad char name = " << name << endl;
-			sfAndList = nameToAndList(name);
-			// PrintAndList(sfAndList);
-			cnf->GrowFromParseTree(sfAndList, aliasToSchema[alias1], *literal);
-			// cnf->Print();
-
-			currentNode->next = new SelectFileNode((char*)(aliasToTable[alias1]+".bin").c_str(), pipeID, aliasToSchema[alias1],  cnf, literal);
-			aliasToPipeID[alias1] = pipeID++;
-			currentNode = currentNode->next;
-
-			// Adding entry in aliasToSFNode
-			aliasToSfNode[alias1] = (SelectFileNode*)currentNode;
-		}
-
-		if(aliasToSfNode.find(alias2) == aliasToSfNode.end()){
-			cnf = new CNF();
-			literal = new Record();
-
-			// Create ANDLIST
-			// char* name = (char*)alias2.c_str();
-			char* name = aliasToSchema[alias2]->GetAtts()[0].name;
-			// cout << "[test.cc] jugaad char name = " << name << endl;
-			sfAndList = nameToAndList(name);
-			// PrintAndList(sfAndList);
-
-			cnf->GrowFromParseTree(sfAndList, aliasToSchema[alias2], *literal);
-			// cnf->Print();
-			
-			currentNode->next = new SelectFileNode((char*)(aliasToTable[alias2]+".bin").c_str(), pipeID, aliasToSchema[alias2], cnf, literal);
-			aliasToPipeID[alias2] = pipeID++;
-			currentNode = currentNode->next;
-
-			// Adding entry in aliasToSFNode
-			aliasToSfNode[alias2] = (SelectFileNode*)currentNode;
-		}
-
 	}
 
-	cout << "[test.cc] Created AND Lists for Joins \n";
-	// for(auto const& element: aliasToSfNode){
-	// 	cout << element.first << endl;
-	// }
-
-	
 	// Assuming text file is already present
 	Statistics s;
 	s.Read("Statistics.txt");
-
-	// **TODO Call Copy Rel For getting c1 from customer
 
 	int bestEstimate = INT_MAX;
 	int size = join_map.size();
@@ -464,8 +345,7 @@ void parseAndList(struct AndList * andList){
 	AndList* tempAndList;
 	for(int i = 0 ; i < size; i++) {
 		char* rel_name[2+i];
-		char* best_rel_name[2+i];
-		int best_index;
+
 		bestEstimate = INT_MAX;
 		for(pair<string, vector<orList*>> entry: join_map) {
 			int index = 0;
@@ -490,20 +370,12 @@ void parseAndList(struct AndList * andList){
 			}
 
 			int estimate = s.Estimate(join_cnf_map[entry.first], rel_name, index);
-			
 			if(estimate < bestEstimate) {
 				bestEstimate = estimate;
 				bestEntry = entry.first;
-				for(int j = 0 ; j < 2+i; j++){
-					best_rel_name[j] = rel_name[j];
-				}
-				best_index = index;
 			}
 		}
 
-		cout << "[test.cc] Round "<< i << " of estimation: bestEstimate = " << bestEstimate << endl;
-
-		s.Apply(join_cnf_map[bestEntry], best_rel_name, best_index);
 		// Remove the entry from the inner map
 		// so that it is not used in future cases
 		join_map.erase(bestEntry);
@@ -517,34 +389,27 @@ void parseAndList(struct AndList * andList){
 		stringstream ss(bestEntry);
 		string item;
 		while (getline(ss, item, ':')) {
-			joined_rel.insert(item);
+			if(joined_rel.count(item) == 0) {
+				joined_rel.insert(item);
+			}
 		}
 
 	}
 
-	cout << "[test.cc] Got the optimal Join Order \n";
-	// for(auto const& element : join_cnf_map){
-	// 	cout << element.first << endl;
-	// }
-
-	
 	// At this stage, join_cnf_map should have the correct order
 	unordered_map<string, int> relToGroupNo;
 	unordered_map<int, JoinNode*> groupToJoinNode;
-	
-	int groupRel1, groupRel2;
+	// string relation1;
+	// string relation2;
+	int groupRel1 = -1;
+	int groupRel2 = -1;
 	int groupNo = 0;
 	JoinNode *join_node;
 	Schema *schema1, *schema2, *outSchema;
 	int inPipe1ID = -1;
 	int inPipe2ID = -1;
 	int outPipeID = -1;
-
-	int round = 1;
-
 	for(pair<string, AndList*> entry: join_cnf_map) {
-
-		// cout << "[test.cc] Round : " << round++ << endl;
 		// Read relation names
 		stringstream ss(entry.first);
 		getline(ss, relation1, ':');
@@ -563,8 +428,8 @@ void parseAndList(struct AndList * andList){
 		// Get appropriate inputs for join
 		if(groupRel1 == -1) {
 			// If was not joined previously, use its SelectFileNode
-			inPipe1ID = aliasToSfNode[relation1]->outPipeID;
-			schema1 = aliasToSfNode[relation1]->outSchema;
+			inPipe1ID = aliasToSfNode[(char*)relation1.c_str()]->outPipeID;
+			schema1 = aliasToSfNode[(char*)relation1.c_str()]->outSchema;
 
 		} else { // Else use info from previous join
 			inPipe1ID = groupToJoinNode[groupRel1]->outPipeID;
@@ -572,29 +437,23 @@ void parseAndList(struct AndList * andList){
 		}
 
 		if(groupRel2 == -1) {
-			inPipe2ID = aliasToSfNode[relation2]->outPipeID;
-			schema2 = aliasToSfNode[relation2]->outSchema;
-
+			inPipe2ID = aliasToSfNode[(char*)relation2.c_str()]->outPipeID;
+			schema2 = aliasToSfNode[(char*)relation2.c_str()]->outSchema;
 		} else{
 			inPipe2ID = groupToJoinNode[groupRel2]->outPipeID;
 			schema2 = groupToJoinNode[groupRel2]->outSchema;
 		}
-
-		// cout << "[test.cc] Got the input pipes and schema\n";
 
 		// create cnf and literal using the 2 schemas
 		cnf = new CNF();
 		literal = new Record();
 		cnf->GrowFromParseTree(entry.second, schema1, schema2, *literal);
 
-		// cout << "[test.cc] Created CNF\n";
 		// Create Combined Schema
 		outSchema = CombineSchema(schema1, schema2);
 
 		// Create JoinNode
 		join_node = new JoinNode(inPipe1ID, inPipe2ID, pipeID++, outSchema, cnf, literal);
-		// cout << "[test.cc] Created Join Node\n";
-
 		currentNode->next = join_node;
 		currentNode = currentNode->next;
 
@@ -628,43 +487,41 @@ void parseAndList(struct AndList * andList){
 			groupToJoinNode[minGroup] = join_node;
 			groupToJoinNode.erase(maxGroup);
 		}
-		// cout << "[test.cc] Updated structures\n";
 
 	}
 
-	cout << "[test.cc] Created Join Nodes\n";
-	// PrintSchema(currentNode->outSchema);
+    //Group by  ------- Pipe &inPipe, Pipe &outPipe, OrderMaker &groupAtts, Function &computeMe
+    if(groupingAtts != NULL){
 
-	
-	// ************* AMARDEEP CODE **********************
-	if(groupingAtts != NULL){
-
-        // Create AND List and OutSchema
+        // Create AND List
         AndList *dummy = new AndList();
         AndList *grpByAndList = dummy;
-		vector<char*> grpingAttsNames;
-		vector<Type> grpingAttsTypes;
 
         while(groupingAtts != NULL){
 
             char* name = groupingAtts->name;
-			grpByAndList->rightAnd = nameToAndList(name);
-			grpByAndList = grpByAndList->rightAnd;
-			grpingAttsNames.push_back(name);
-			grpingAttsTypes.push_back(aliasToSchema[getRelName(&name)]->FindType(name));
-			groupingAtts = groupingAtts->next;
+            Operand *left = new Operand();
+            left->code = NAME;
+            left->value = name;
+            ComparisonOp *grpByCompOp = new ComparisonOp();
+            grpByCompOp->code = EQUALS;
+            grpByCompOp->left = left;
+            grpByCompOp->right = left;
+            OrList *grpByOrList = new OrList();
+            grpByOrList->left = grpByCompOp;
+            grpByOrList->rightOr = NULL;
+            grpByAndList->rightAnd = new AndList();
+            grpByAndList->rightAnd->left = grpByOrList;
+            grpByAndList = grpByAndList->rightAnd;
         }
 
         // Final AndList
         grpByAndList = dummy->rightAnd;
 
-		PrintAndList(grpByAndList);
-
         // Create CNF
         cnf = new CNF();
         literal = new Record();
         cnf->GrowFromParseTree(grpByAndList, currentNode->outSchema, *literal);
-		cnf->Print();
 
         // Create OrderMaker
         OrderMaker *grp_order, *dummyOrderMaker;
@@ -676,24 +533,26 @@ void parseAndList(struct AndList * andList){
         Function *grpByAggFunction = new Function();
         grpByAggFunction->GrowFromParseTree (finalFunction, *currentNode->outSchema);
 
-		// Create OutSchema
-		// First attribute will be Double, Rest wiil be the grpByAttributes from above
-		Attribute* atts = new Attribute[grpingAttsNames.size()+1];
-		atts[0].myType = Double;
-		atts[0].name = "double";
-		for(int i = 1; i <= grpingAttsNames.size(); i++){
-			atts[i].name = grpingAttsNames[i-1];
-			atts[i].myType = grpingAttsTypes[i-1];
-		}
-
-		outSchema = new Schema("grpByOutSchema", grpingAttsNames.size()+1, atts);
-		PrintSchema(outSchema);
+        // Create OutSchema
+        // First attribute will be Double, Rest wiil be the grpByAttributes from above
 
         // Create GroupBy Node
-        currentNode->next = new GroupByNode(currentNode->outPipeID , pipeID++, outSchema, grp_order, grpByAggFunction);
+        currentNode->next = new GroupByNode(currentNode->outPipeID , pipeID++, Schema *outSchema, grp_order, grpByAggFunction);
 
     }
-	
+
+    // Projection  ---------- Pipe &inPipe, Pipe &outPipe, int *keepMe, int numAttsInput, int numAttsOutput
+
+    // Duplicate removal ----------- Pipe &inPipe, Pipe &outPipe, Schema &mySchema
+
+    // OR
+
+    // Sum  ------------- Pipe &inPipe, Pipe &outPipe, Function &computeMe
+	// inPipe -- From the previous operation in the order of the operations
+    // outPipe -- Create a new pipeID
+    // computeMe -- Use FuncOperator to generate this with the help of the Function::GrowFromParseTree
+
+
 }
 
 Schema* CombineSchema(Schema* schema1, Schema* schema2) {
@@ -709,6 +568,6 @@ Schema* CombineSchema(Schema* schema1, Schema* schema2) {
 		result_atts[index++] = atts2[i];
 	}
 
-	Schema* result_schema = new Schema("joined_sch", total_atts, result_atts );
+	Schema *result_schema = new Schema("joined_sch", total_atts, result_atts );
 	return result_schema;
 }

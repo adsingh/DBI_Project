@@ -1,6 +1,7 @@
 #include "Comparison.h"
 #include "Record.h"
 #include "Function.h"
+#include <vector>
 
 
 class QueryPlanNode {
@@ -13,6 +14,7 @@ class QueryPlanNode {
 	QueryPlanNode *next;
 	int outPipeID;
 	Schema *outSchema;
+	
 	virtual void Print () = 0;
 };
 
@@ -92,7 +94,7 @@ class SumNode : public QueryPlanNode {
 
 	public:
 	void Print();
-	SumNode (int inPipeID, int outPipeID, Schema *outSchema, Function *computeMe);
+	SumNode (int inPipeID, int outPipeID, Schema *outSchema,  Function *computeMe);
 };
 
 class GroupByNode : public QueryPlanNode {

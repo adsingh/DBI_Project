@@ -170,7 +170,6 @@ int CNF ::GetSortOrders(OrderMaker &left, OrderMaker &right)
 
 		// if we don't have a disjunction of length one, then it
 		// can't be acceptable for use with a sort ordering
-		printf("[Comp.cc] i = %d, orlen = %d\n", i, orLens[i]);
 		if (orLens[i] != 1)
 		{
 			continue;
@@ -568,7 +567,6 @@ void CNF ::GrowFromParseTree(struct AndList *parseTree, Schema *mySchema,
 			// we look it up in the schema
 			if (myOr->left->left->code == NAME)
 			{
-
 				// see if we can find this attribute in the schema
 				if (mySchema->Find(myOr->left->left->value) != -1)
 				{

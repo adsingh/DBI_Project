@@ -63,7 +63,7 @@ void DuplicateRemovalNode::Print () {
 	
 }
 
-SumNode::SumNode (int inPipeID, int outPipeID, Schema *outSchema, Function *computeMe) : QueryPlanNode() {
+SumNode::SumNode (int inPipeID, int outPipeID, Schema *outSchema,  Function *computeMe) : QueryPlanNode() {
    this->inPipeID = inPipeID;
    this->outPipeID = outPipeID;
    this->outSchema = outSchema;
@@ -74,7 +74,7 @@ void SumNode::Print () {
 	
 }
 
-GroupByNode::GroupByNode (int inPipeID, int outPipeID, Schema *outSchema, OrderMaker *groupAtts, Function *computeMe) : QueryPlanNode() {
+GroupByNode::GroupByNode (int inPipeID, int outPipeID, Schema *outSchema,  OrderMaker *groupAtts, Function *computeMe) : QueryPlanNode() {
    this->inPipeID = inPipeID;
    this->outPipeID = outPipeID;
    this->outSchema = outSchema;
