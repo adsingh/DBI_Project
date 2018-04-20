@@ -2,7 +2,9 @@
 #include "Record.h"
 #include "Function.h"
 #include <vector>
+#include <iostream>
 
+using namespace std;
 
 class QueryPlanNode {
 	
@@ -14,7 +16,7 @@ class QueryPlanNode {
 	QueryPlanNode *next;
 	int outPipeID;
 	Schema *outSchema;
-	
+	void PrintSchema(Schema * sch);
 	virtual void Print () = 0;
 };
 

@@ -149,7 +149,7 @@ Schema* CombineSchema(Schema* schema1, Schema* schema2);
 int main () {
 
 	yyparse();
-	printFuncOperator(finalFunction, 1);
+	/*printFuncOperator(finalFunction, 1);
 
 	cout << "********   AND LIST ***********\n";
 	PrintAndList(boolean);
@@ -171,7 +171,7 @@ int main () {
 	cout << distinctAtts << "\n\n";
 
 	cout << "********   distinctFunc ***********\n";
-	cout << distinctFunc << endl;
+	cout << distinctFunc << endl;*/
 
 	parseAndList(boolean);
 	
@@ -230,7 +230,7 @@ void PrintSchema(Schema* sch){
 
 	for(int i = 0 ; i < numAtts; i++){
 		// string attName(atts[i].name);
-		cout <<  " ********* : "<< attsRes[i].name << "  " << attsRes[i].myType << endl;
+		cout << attsRes[i].name <<  " : " << attsRes[i].myType << endl;
 	}
 }
 
@@ -260,12 +260,12 @@ void parseAndList(struct AndList * andList){
 		tables = tables->next;
 	}
 
-	cout << "[test.cc] Created Schema Map\n";
+	// cout << "[test.cc] Created Schema Map\n";
 	
 	set<string> tblNameSet; 
 	string relation1;
 	string relation2;
-	char* rel;
+	string rel;
 	stringstream joinKey;
 
 	while(andList != NULL){
@@ -314,7 +314,7 @@ void parseAndList(struct AndList * andList){
 			join_map[joinKey.str()].push_back(andList->left);
 		}
 		else if(tblNameSet.size() == 1){
-			rel = (char*)(*tblNameSet.begin()).c_str();
+			rel = *(tblNameSet.begin());
 			sf_cnf_map[rel].push_back(andList->left);
 		}
 		andList = andList->rightAnd;
@@ -325,15 +325,15 @@ void parseAndList(struct AndList * andList){
 	CNF *cnf;
 	Record *literal;
 
-	QueryPlanNode *dummy = new SelectFileNode();
-	QueryPlanNode *currentNode = dummy;
+	QueryPlanNode *dummyQueryPlanNode = new SelectFileNode();
+	QueryPlanNode *currentNode = dummyQueryPlanNode;
 	int pipeID = 1;
 	unordered_map<string, int> aliasToPipeID;
 
-	cout << "[test.cc] Created SF and Join CNF Maps\n";
+	// cout << "[test.cc] Created SF and Join CNF Maps\n";
 
 	for(pair<string, vector<orList*>> entry : sf_cnf_map){
-		cout << "vector size: " << entry.second.size() << endl;
+		// cout << "vector size: " << entry.second.size() << endl;
 		int index = 0;
 
 		sfAndList = new AndList();
@@ -348,7 +348,7 @@ void parseAndList(struct AndList * andList){
 
 		// sfAndList->rightAnd;
 
-		PrintAndList(sfAndList->rightAnd);
+		// PrintAndList(sfAndList->rightAnd);
 		cout << endl;
 
 		// Create CNF here
@@ -371,6 +371,8 @@ void parseAndList(struct AndList * andList){
 		aliasToSfNode[entry.first] = (SelectFileNode*)currentNode;
 
 	}
+
+	// cout << "[test.cc] Created SF Nodes\n";
 	
 	// Create And Lists for joins
 	AndList *jAndList;
@@ -444,7 +446,8 @@ void parseAndList(struct AndList * andList){
 
 	}
 
-	cout << "[test.cc] Created AND Lists for Joins \n";
+	// if(join_map.size() > 0)
+	// 	cout << "[test.cc] Created AND Lists for Joins \n";
 	// for(auto const& element: aliasToSfNode){
 	// 	cout << element.first << endl;
 	// }
@@ -453,6 +456,9 @@ void parseAndList(struct AndList * andList){
 	// Assuming text file is already present
 	Statistics s;
 	s.Read("Statistics.txt");
+	for(pair<string, string> entry: aliasToTable){
+		s.CopyRel((char*)entry.second.c_str(), (char*)entry.first.c_str());
+	}
 
 	// **TODO Call Copy Rel For getting c1 from customer
 
@@ -501,7 +507,7 @@ void parseAndList(struct AndList * andList){
 			}
 		}
 
-		cout << "[test.cc] Round "<< i << " of estimation: bestEstimate = " << bestEstimate << endl;
+		// cout << "[test.cc] Round "<< i << " of estimation: bestEstimate = " << bestEstimate << endl;
 
 		s.Apply(join_cnf_map[bestEntry], best_rel_name, best_index);
 		// Remove the entry from the inner map
@@ -522,7 +528,8 @@ void parseAndList(struct AndList * andList){
 
 	}
 
-	cout << "[test.cc] Got the optimal Join Order \n";
+	// if(size > 0)
+		// cout << "[test.cc] Got the optimal Join Order \n";
 	// for(auto const& element : join_cnf_map){
 	// 	cout << element.first << endl;
 	// }
@@ -632,13 +639,15 @@ void parseAndList(struct AndList * andList){
 
 	}
 
-	cout << "[test.cc] Created Join Nodes\n";
-	// PrintSchema(currentNode->outSchema);
+	// if(join_cnf_map.size() > 0)
+		// cout << "[test.cc] Created Join Nodes\n";
 
+	bool isGroupByPresent = false;
 	
 	// ************* AMARDEEP CODE **********************
 	if(groupingAtts != NULL){
 
+		isGroupByPresent = true;
         // Create AND List and OutSchema
         AndList *dummy = new AndList();
         AndList *grpByAndList = dummy;
@@ -658,13 +667,13 @@ void parseAndList(struct AndList * andList){
         // Final AndList
         grpByAndList = dummy->rightAnd;
 
-		PrintAndList(grpByAndList);
+		// PrintAndList(grpByAndList);
 
         // Create CNF
         cnf = new CNF();
         literal = new Record();
         cnf->GrowFromParseTree(grpByAndList, currentNode->outSchema, *literal);
-		cnf->Print();
+		// cnf->Print();
 
         // Create OrderMaker
         OrderMaker *grp_order, *dummyOrderMaker;
@@ -680,20 +689,111 @@ void parseAndList(struct AndList * andList){
 		// First attribute will be Double, Rest wiil be the grpByAttributes from above
 		Attribute* atts = new Attribute[grpingAttsNames.size()+1];
 		atts[0].myType = Double;
-		atts[0].name = "double";
+		atts[0].name = "aggResult";
 		for(int i = 1; i <= grpingAttsNames.size(); i++){
 			atts[i].name = grpingAttsNames[i-1];
 			atts[i].myType = grpingAttsTypes[i-1];
 		}
 
 		outSchema = new Schema("grpByOutSchema", grpingAttsNames.size()+1, atts);
-		PrintSchema(outSchema);
+		// PrintSchema(outSchema);
 
         // Create GroupBy Node
         currentNode->next = new GroupByNode(currentNode->outPipeID , pipeID++, outSchema, grp_order, grpByAggFunction);
+		currentNode = currentNode->next;
 
+		// cout << "[test.cc] Created Group By Node\n";
     }
+	// Sum  ------------- Pipe &inPipe, Pipe &outPipe, Function &computeMe
+	// inPipe -- From the previous operation in the order of the operations
+    // outPipe -- Create a new pipeID
+    // computeMe -- Use FuncOperator to generate this with the help of the Function::GrowFromParseTree
+	else if(groupingAtts == NULL && finalFunction != NULL ){
+		
+		Function *sumAggFunction = new Function();
+        sumAggFunction->GrowFromParseTree (finalFunction, *currentNode->outSchema);
+		Attribute* atts = new Attribute[1];
+		atts[0].name = "sumResult";
+		atts[0].myType = Double;
+
+		currentNode->next = new SumNode(currentNode->outPipeID, pipeID++, new Schema("sum_schema", 1, atts), sumAggFunction );
+		currentNode = currentNode->next;
+
+		// cout << "[test.cc] Created SUM Node\n";
+
+	}
+
 	
+	
+	// PrintSchema(currentNode->outSchema);
+
+	// Projection  ---------- Pipe &inPipe, Pipe &outPipe, int *keepMe, int numAttsInput, int numAttsOutput
+	// in Pipe = currentNode->outPipeID, numAttsInput = currentNode->outSchem->GetNumAtts(), 
+	vector<int> attsPosToKeep;
+	vector<char*> attsToSelectNames;
+	vector<Type> attsToSelectTypes;
+	int pos;
+	if(attsToSelect != NULL){
+
+		while(attsToSelect != NULL){
+			int pos = currentNode->outSchema->Find(attsToSelect->name);
+			if(pos == -1){
+				cout << "Not found the ATTS: " << attsToSelect->name << endl;
+				exit(1);
+			}
+			attsToSelectNames.push_back(attsToSelect->name);
+			attsToSelectTypes.push_back(currentNode->outSchema->FindType(attsToSelect->name));
+			attsPosToKeep.push_back(pos);
+			attsToSelect = attsToSelect->next;
+		}
+
+		if(isGroupByPresent){
+			attsToSelectNames.push_back("aggResult");
+			attsToSelectTypes.push_back(Double);
+			attsPosToKeep.push_back(0);
+		}
+		
+
+		int* keepMe = new int[attsPosToKeep.size()];
+		int index = attsPosToKeep.size()-1;
+		Attribute* atts = new Attribute[attsPosToKeep.size()];
+
+		for(int attsPos: attsPosToKeep){
+			atts[index].name = attsToSelectNames[attsPosToKeep.size()-1 - index];
+			atts[index].myType = attsToSelectTypes[attsPosToKeep.size()-1 - index];
+			keepMe[index--] = attsPos;
+		}
+
+		int numsAttsInput = currentNode->outSchema->GetNumAtts();
+		int numsAttsOutput = attsPosToKeep.size();
+
+		// Create OutSchema
+		outSchema = new Schema("projectionSchema", numsAttsOutput, atts);
+		// PrintSchema(outSchema);
+
+		currentNode->next = new ProjectNode(currentNode->outPipeID, pipeID++, outSchema, keepMe, numsAttsInput, numsAttsOutput);
+		currentNode = currentNode->next;
+
+		// cout << "[test.cc] Created Projection Node\n";	
+	}
+
+	// Duplicate removal ----------- Pipe &inPipe, Pipe &outPipe, Schema &mySchema
+	if(distinctAtts == 1){
+		currentNode->next = new DuplicateRemovalNode(currentNode->outPipeID, pipeID++, currentNode->outSchema, currentNode->outSchema);
+		currentNode = currentNode->next;
+
+		// cout << "[test.cc] Created Duplicate removal Node\n";
+	}
+
+	// Print in Order
+	QueryPlanNode* finalPlan = dummyQueryPlanNode->next;
+	while(finalPlan != NULL){
+		cout << "\n\n";
+		finalPlan->Print();
+		cout << "===========================================================\n";
+		finalPlan = finalPlan->next;
+	}
+
 }
 
 Schema* CombineSchema(Schema* schema1, Schema* schema2) {

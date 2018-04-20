@@ -9,7 +9,10 @@ endif
 
 test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pipe.o BigQ.o RelOp.o HeapFile.o SortedFile.o Function.o Statistics.o QueryPlanNode.o y.tab.o yyfunc.tab.o lex.yy.o lex.yyfunc.o test.o
 	$(CC) -o a4-2.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pipe.o BigQ.o RelOp.o HeapFile.o SortedFile.o Function.o Statistics.o QueryPlanNode.o y.tab.o yyfunc.tab.o lex.yy.o lex.yyfunc.o test.o -lfl -lpthread
-	
+
+a4-1.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pipe.o BigQ.o RelOp.o HeapFile.o SortedFile.o Function.o Statistics.o QueryPlanNode.o y.tab.o yyfunc.tab.o lex.yy.o lex.yyfunc.o stats_gen.o
+	$(CC) -o a4-1.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pipe.o BigQ.o RelOp.o HeapFile.o SortedFile.o Function.o Statistics.o QueryPlanNode.o y.tab.o yyfunc.tab.o lex.yy.o lex.yyfunc.o stats_gen.o -lfl -lpthread
+
 a2-2test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o y.tab.o lex.yy.o a2-2test.o
 	$(CC) -o a2-2test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o y.tab.o lex.yy.o a2-2test.o -lfl -lpthread
 	
@@ -25,6 +28,9 @@ main.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o Pipe
 test.o: test.cc
 	$(CC) -g -c test.cc
 	
+stats_gen.o: stats_gen.cc
+	$(CC) -g -c stats_gen.cc
+
 a2-2test.o: a2-2test.cc
 	$(CC) -g -c a2-2test.cc
 
