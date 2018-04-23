@@ -528,7 +528,7 @@ void *Join::workHandler(void *args) {
 				tempFile.MoveFirst();
 
 				while(tempFile.GetNext(leftRec)){
-					for(rightRec : recVec){
+					for(auto rightRec : recVec){
 						if(comp.Compare(&leftRec, rightRec, worker_args->literal, worker_args->selOp) != 0){
 							
 							if(attsToKeep == NULL){
