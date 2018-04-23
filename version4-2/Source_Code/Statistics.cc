@@ -162,7 +162,7 @@ double Statistics::EstimationHelper(struct AndList *parseTree, char *relNames[],
     for(int i = 0 ; i < numToJoin; i++) {
         string relname_str(relNames[i]);
         if(stats.rel_to_group.find(relname_str) == stats.rel_to_group.end()) {
-            cout << "Unknown Relation. Exiting Application" << endl;
+            cout << "Unknown Relation " << relNames[i] << " at index "<< i << ". Exiting Application" << endl;
             exit(1);
         }
         group_no = stats.rel_to_group[relname_str];
@@ -171,7 +171,6 @@ double Statistics::EstimationHelper(struct AndList *parseTree, char *relNames[],
         }
         input_groups[group_no]++;
     }
-
     int num_relations = -1;
 
     string num_relation_str("num_relations");
@@ -214,7 +213,6 @@ double Statistics::EstimationHelper(struct AndList *parseTree, char *relNames[],
                 parseAttributeName(att1_str);
                 parseAttributeName(att2_str);
 
-                // cout << "[Stats.cc] Performing Join \n";
                 // If groups are same, do nothing
                 if(group1 == group2) {
                     or_list = or_list->rightOr;
