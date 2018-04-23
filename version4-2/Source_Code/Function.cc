@@ -201,6 +201,37 @@ void Function :: GrowFromParseTree (struct FuncOperator *parseTree, Schema &mySc
 }
 
 void Function :: Print () {
+	Arithmatic arithmatic;
+	cout << "returnsInt : " << returnsInt << endl;
+	for(int i = 0; i < numOps; i++) {
+		arithmatic = opList[i];
+		cout << "myOp : " << arithmatic.myOp << endl;
+		if(arithmatic.recInput == -1) {
+			switch(arithmatic.myOp) {
+				case PushInt:
+				case ToDouble:
+				case ToDouble2Down:
+				case IntUnaryMinus:
+				case IntMinus:
+				case IntPlus:
+				case IntDivide:
+				case IntMultiply: {
+					cout << "litInput : " << *(int *)arithmatic.litInput << endl;
+				}
+				break;
+				case PushDouble:
+				case DblUnaryMinus:
+				case DblMinus:
+				case DblPlus:
+				case DblDivide:
+				case DblMultiply: {
+					cout << "litInput : " << *(double *)arithmatic.litInput << endl;
+				}
+			};
+		} else {
+			cout << "recInput : " << arithmatic.recInput << endl;
+		}
+	}
 
 }
 
