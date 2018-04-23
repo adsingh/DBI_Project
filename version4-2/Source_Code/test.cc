@@ -367,7 +367,7 @@ QueryPlanNode* CreateQueryPlan(){
 		aliasToPipeID[entry.first] = pipeID++;
 		currentNode = currentNode->next;
 		currentNode->Print();
-
+		cout << "===============================================" << endl;
 		// Adding entry in aliasToSFNode
 		aliasToSfNode[entry.first] = (SelectFileNode*)currentNode;
 
@@ -419,7 +419,7 @@ QueryPlanNode* CreateQueryPlan(){
 			aliasToPipeID[alias1] = pipeID++;
 			currentNode = currentNode->next;
 			currentNode->Print();
-
+			cout << "===============================================" << endl;
 			// Adding entry in aliasToSFNode
 			aliasToSfNode[alias1] = (SelectFileNode*)currentNode;
 		}
@@ -440,7 +440,7 @@ QueryPlanNode* CreateQueryPlan(){
 			aliasToPipeID[alias2] = pipeID++;
 			currentNode = currentNode->next;
 			currentNode->Print();
-
+			cout << "===============================================" << endl;
 			// Adding entry in aliasToSFNode
 			aliasToSfNode[alias2] = (SelectFileNode*)currentNode;
 		}
@@ -591,7 +591,7 @@ QueryPlanNode* CreateQueryPlan(){
 		currentNode->next = join_node;
 		currentNode = currentNode->next;
 		currentNode->Print();
-
+		cout << "===============================================" << endl;
 		// Update relToGroupNo and groupToJoinNode accordingly
 		
 		// If both relations are not previously joined before
@@ -685,7 +685,7 @@ QueryPlanNode* CreateQueryPlan(){
         currentNode->next = new GroupByNode(currentNode->outPipeID , pipeID++, outSchema, grp_order, grpByAggFunction);
 		currentNode = currentNode->next;
 		currentNode->Print();
-
+		cout << "===============================================" << endl;
 		// cout << "[test.cc] Created Group By Node\n";
     }
 	// Sum  ------------- Pipe &inPipe, Pipe &outPipe, Function &computeMe
@@ -703,7 +703,7 @@ QueryPlanNode* CreateQueryPlan(){
 		currentNode->next = new SumNode(currentNode->outPipeID, pipeID++, new Schema("sum_schema", 1, atts), sumAggFunction );
 		currentNode = currentNode->next;
 		currentNode->Print();
-
+		cout << "===============================================" << endl;
 		// cout << "[test.cc] Created SUM Node\n";
 
 	} else if(groupingAtts == NULL && finalFunction != NULL && distinctFunc == 1) {
@@ -769,6 +769,7 @@ QueryPlanNode* CreateQueryPlan(){
 		currentNode->next = new DuplicateRemovalNode(currentNode->outPipeID, pipeID++, currentNode->outSchema, currentNode->outSchema);
 		currentNode = currentNode->next;
 		currentNode->Print();
+		cout << "===============================================" << endl;
 		// cout << "[test.cc] Created Duplicate removal Node\n";
 	}
 
