@@ -29,7 +29,7 @@ class QueryPlanNode {
 	virtual void Print () = 0;
 	virtual void Run() = 0;
 	virtual void WaitUntilDone() = 0;
-	int clear_pipe(Pipe &in_pipe, Schema *schema, bool print);
+	static int clear_pipe(QueryPlanNode* lastNode, bool print);
 	
 };
 

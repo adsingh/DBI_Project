@@ -15,18 +15,23 @@ void QueryPlanNode::PrintSchema(Schema *sch){
 	}
 }
 
-int QueryPlanNode::clear_pipe(Pipe &in_pipe, Schema *schema, bool print)
+int QueryPlanNode::clear_pipe(QueryPlanNode* lastNode, bool print)
 {
+    int inPipeId = lastNode->outPipeID;
+    
 	Record rec;
 	int cnt = 0;
-	while (in_pipe.Remove(&rec))
+    
+	while ((*(QueryPlanNode::pipesVector))[inPipeId-1]->Remove(&rec))
 	{
 		if (print)
 		{
-			rec.Print(schema);
+			rec.Print(lastNode->outSchema);
 		}
 		cnt++;
 	}
+
+    cout << "Query returned " << cnt << " records\n";
 	return cnt;
 }
 
@@ -74,16 +79,16 @@ void SelectFileNode::Run(){
 }
 
 void SelectFileNode::WaitUntilDone(){
-    int cnt;
-    if(next == NULL){
-        cnt = clear_pipe(*(*QueryPlanNode::pipesVector)[outPipeID-1], outSchema, true);
-    }
+    // int cnt;
+    // if(next == NULL){
+    //     cnt = clear_pipe(*(*QueryPlanNode::pipesVector)[outPipeID-1], outSchema, true);
+    // }
     
     SF.WaitUntilDone();
-    cout << "Finished selection for " << fileName << endl;
-    if(next == NULL){
-        cout << " query returned " << cnt << " records\n";
-    }
+    // cout << "Finished selection for " << fileName << endl;
+    // if(next == NULL){
+    //     cout << " query returned " << cnt << " records\n";
+    // }
     dbFile.Close();
 }
 
@@ -109,14 +114,14 @@ void SelectPipeNode::Run(){
 }
 
 void SelectPipeNode::WaitUntilDone(){
-    int cnt;
-    if(next == NULL){
-        cnt = clear_pipe(*(*QueryPlanNode::pipesVector)[outPipeID-1], outSchema, true);
-    }
+    // int cnt;
+    // if(next == NULL){
+    //     cnt = clear_pipe(*(*QueryPlanNode::pipesVector)[outPipeID-1], outSchema, true);
+    // }
     SP.WaitUntilDone();
-    if(next == NULL){
-        cout << " query returned " << cnt << " records\n";
-    }
+    // if(next == NULL){
+    //     cout << " query returned " << cnt << " records\n";
+    // }
 }
 
 ProjectNode::ProjectNode (int inPipeID, int outPipeID, Schema *outSchema, int *keepMe, int numAttsInput, int numAttsOutput) : QueryPlanNode() {
@@ -149,15 +154,15 @@ void ProjectNode::Run(){
 
 void ProjectNode::WaitUntilDone(){
 
-    int cnt;
-    if(next == NULL){
-        cout << "****************** WILL PRINT PROJECTS OUTPUT ***************\n";
-        cnt = clear_pipe(*(*QueryPlanNode::pipesVector)[outPipeID-1], outSchema, false);
-    }
+    // int cnt;
+    // if(next == NULL){
+    //     cout << "****************** WILL PRINT PROJECTS OUTPUT ***************\n";
+    //     cnt = clear_pipe(*(*QueryPlanNode::pipesVector)[outPipeID-1], outSchema, false);
+    // }
     P.WaitUntilDone();
-    if(next == NULL){
-        cout << " query returned " << cnt << " records\n";
-    }
+    // if(next == NULL){
+    //     cout << " query returned " << cnt << " records\n";
+    // }
 }
 
 JoinNode::JoinNode (int inPipe1ID, int inPipe2ID, int outPipeID, Schema *outSchema, CNF *selOp, Record* literal) : QueryPlanNode() {
@@ -214,14 +219,14 @@ void DuplicateRemovalNode::Run(){
 }
 
 void DuplicateRemovalNode::WaitUntilDone(){
-    int cnt;
-    if(next == NULL){
-        cnt = clear_pipe(*(*QueryPlanNode::pipesVector)[outPipeID-1], outSchema, true);
-    }
+    // int cnt;
+    // if(next == NULL){
+    //     cnt = clear_pipe(*(*QueryPlanNode::pipesVector)[outPipeID-1], outSchema, true);
+    // }
     D.WaitUntilDone();
-    if(next == NULL){
-        cout << " query returned " << cnt << " records\n";
-    }
+    // if(next == NULL){
+    //     cout << " query returned " << cnt << " records\n";
+    // }
 }
 
 SumNode::SumNode (int inPipeID, int outPipeID, Schema *outSchema,  Function *computeMe, bool isDistinctSum) : QueryPlanNode() {
@@ -248,14 +253,14 @@ void SumNode::Run(){
 }
 
 void SumNode::WaitUntilDone(){
-    int cnt;
-    if(next == NULL){
-        cnt = clear_pipe(*(*QueryPlanNode::pipesVector)[outPipeID-1], outSchema, true);
-    }
+    // int cnt;
+    // if(next == NULL){
+    //     cnt = clear_pipe(*(*QueryPlanNode::pipesVector)[outPipeID-1], outSchema, true);
+    // }
     S.WaitUntilDone();
-    if(next == NULL){
-        cout << " query returned " << cnt << " records\n";
-    }
+    // if(next == NULL){
+    //     cout << " query returned " << cnt << " records\n";
+    // }
 }
 
 GroupByNode::GroupByNode (int inPipeID, int outPipeID, Schema *outSchema,  OrderMaker *groupAtts, Function *computeMe,bool isDistinctGroupBy) : QueryPlanNode() {
@@ -286,12 +291,12 @@ void GroupByNode::Run(){
 }
 
 void GroupByNode::WaitUntilDone(){
-    int cnt;
-    if(next == NULL){
-        cnt = clear_pipe(*(*QueryPlanNode::pipesVector)[outPipeID-1], outSchema, true);
-    }
+    // int cnt;
+    // if(next == NULL){
+    //     cnt = clear_pipe(*(*QueryPlanNode::pipesVector)[outPipeID-1], outSchema, true);
+    // }
     G.WaitUntilDone();
-    if(next == NULL){
-        cout << " query returned " << cnt << " records\n";
-    }
+    // if(next == NULL){
+    //     cout << " query returned " << cnt << " records\n";
+    // }
 }

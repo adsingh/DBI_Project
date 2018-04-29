@@ -146,13 +146,6 @@ string getRelName(char** strPtr);
 
 Schema* CombineSchema(Schema* schema1, Schema* schema2);
 
-void joinThreads(QueryPlanNode* plan){
-	if(plan == NULL)
-		return;
-	joinThreads(plan->next);
-	plan->WaitUntilDone();
-}
-
 // *************************************  MAIN *******************************//
 int main () {
 
@@ -161,14 +154,20 @@ int main () {
 	QueryPlanNode* queryPlan =  CreateQueryPlan();
 	QueryPlanNode::createPipes();
 	QueryPlanNode* node = queryPlan;
+	QueryPlanNode* lastNode;
 	while(node != NULL){
 		// node->Print();
 		node->Run();
+		if(node->next == NULL)
+			lastNode = node;
 		node = node->next;
 	}
 	node = queryPlan;
-	
-	joinThreads(node);
+	QueryPlanNode::clear_pipe(lastNode, true);
+	while(node != NULL){
+		node->WaitUntilDone();
+		node = node->next;
+	}
 	
 }
 
