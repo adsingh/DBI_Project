@@ -15,7 +15,7 @@ void QueryPlanNode::PrintSchema(Schema *sch){
 	}
 }
 
-int QueryPlanNode::clear_pipe(QueryPlanNode* lastNode, bool print)
+int QueryPlanNode::clear_pipe(QueryPlanNode* lastNode, bool print, ostream &out)
 {
     int inPipeId = lastNode->outPipeID;
     
@@ -26,12 +26,12 @@ int QueryPlanNode::clear_pipe(QueryPlanNode* lastNode, bool print)
 	{
 		if (print)
 		{
-			rec.Print(lastNode->outSchema);
+			rec.Print(lastNode->outSchema, out);
 		}
 		cnt++;
 	}
 
-    cout << "Query returned " << cnt << " records\n";
+    out << "Query returned " << cnt << " records\n";
 	return cnt;
 }
 

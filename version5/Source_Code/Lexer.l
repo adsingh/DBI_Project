@@ -55,6 +55,24 @@ void yyerror(char*s);
 
 "AS"			return(AS);
 
+"CREATE" return(CREATE);
+
+"TABLE" return(TABLE);
+
+"ON" return(ON);
+
+"INSERT" return (INSERT);
+
+"INTO" return(INTO);
+
+"DROP" return(DROP);
+
+"SET" return(SET);
+
+"OUTPUT" return(OUTPUT);
+
+";" return(';');
+
 "("			return('(');
 
 "<"                     return('<');
@@ -89,7 +107,9 @@ void yyerror(char*s);
 
 [A-Za-z][A-Za-z0-9_-]*\.[A-Za-z][A-Za-z0-9_-]* {yylval.actualChars = strdup(yytext);
   			return(Name);
-			}     
+			}  
+
+['][a-zA-Z0-9]*\.[a-zA-Z]*['] {yylval.actualChars = strdup(yytext); return(Name);}
 
 \'[^'\n]*\'            {/* take care of ' in a string */
                         if (yytext[yyleng - 2] == '\\') {

@@ -11,6 +11,8 @@
 #define GREATER_THAN 6
 #define EQUALS 7
 
+enum QueryType {Select, Create, Insert, Drop, SetOutput};
+
 // used in computational (funcional) expressions
 struct FuncOperand {
 
@@ -95,6 +97,26 @@ struct AndList {
         // note that this can be NULL if the right is a disjunction
         struct AndList *rightAnd;
 
+};
+
+// Datastructures for CREATE statement
+// char* tableName;
+
+// char* dbFileType;
+
+struct AttDetails {
+        char* name;
+        char* type;
+};
+
+struct AttsToCreate {
+        struct AttDetails* attDetails;
+        struct AttsToCreate* next;
+};
+
+struct SortOrder{
+        char* attName;
+        struct SortOrder* next;
 };
 
 #endif

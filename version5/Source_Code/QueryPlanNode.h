@@ -4,6 +4,8 @@
 #include "RelOp.h"
 #include <vector>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 
 #define PIPE_BUFF_SIZE 100
 
@@ -29,7 +31,7 @@ class QueryPlanNode {
 	virtual void Print () = 0;
 	virtual void Run() = 0;
 	virtual void WaitUntilDone() = 0;
-	static int clear_pipe(QueryPlanNode* lastNode, bool print);
+	static int clear_pipe(QueryPlanNode* lastNode, bool print, ostream &out);
 	
 };
 

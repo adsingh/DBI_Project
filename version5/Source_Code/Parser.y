@@ -11,7 +11,7 @@
 	extern "C" int yyparse();
 	extern "C" void yyerror(char *s);
   
-	// these data structures hold the result of the parsing
+	// these data structures hold the result of the SELECT Statement parsing
 	struct FuncOperator *finalFunction; // the aggregate function (NULL if no agg)
 	struct TableList *tables; // the list of tables and aliases in the query
 	struct AndList *boolean; // the predicate in the WHERE clause
@@ -20,6 +20,14 @@
 	int distinctAtts; // 1 if there is a DISTINCT in a non-aggregate query 
 	int distinctFunc;  // 1 if there is a DISTINCT in an aggregate query
 
+	//these datastructures will hold result of CREATE statement parsing
+	char* tableName;
+	char* dbFileType;
+	struct AttsToCreate *colsToCreate;
+	struct SortOrder* sortOrder;
+	char* dbFileToLoad;
+	char* outputType;
+	QueryType queryType;
 %}
 
 // this stores all of the types returned by production rules
@@ -34,6 +42,9 @@
 	struct NameList *myNames;
 	char *actualChars;
 	char whichOne;
+	struct AttsToCreate *myColsToCreate;
+	struct SortOrder* mySortOrder;
+	struct AttDetails* myColDetails;
 }
 
 %token <actualChars> Name
@@ -50,6 +61,14 @@
 %token AS
 %token AND
 %token OR
+%token CREATE
+%token TABLE
+%token ON
+%token SET
+%token DROP
+%token OUTPUT
+%token INTO
+%token INSERT
 
 %type <myOrList> OrList
 %type <myAndList> AndList
@@ -61,6 +80,9 @@
 %type <myTables> Tables
 %type <myBoolOperand> Literal
 %type <myNames> Atts
+%type <myColsToCreate> ColList
+%type <mySortOrder> SortingAtts
+%type <myColDetails> Column
 
 %start SQL
 
@@ -79,6 +101,7 @@ SQL: SELECT WhatIWant FROM Tables WHERE AndList
 	tables = $4;
 	boolean = $6;	
 	groupingAtts = NULL;
+	queryType = Select;
 }
 
 | SELECT WhatIWant FROM Tables WHERE AndList GROUP BY Atts
@@ -86,6 +109,77 @@ SQL: SELECT WhatIWant FROM Tables WHERE AndList
 	tables = $4;
 	boolean = $6;	
 	groupingAtts = $9;
+	queryType = Select;
+}
+
+| CREATE TABLE Name '(' ColList ')' AS Name
+{
+	tableName = $3;
+	colsToCreate = $5;
+	dbFileType = $8;
+	queryType = Create;
+}
+
+| CREATE TABLE Name '(' ColList ')' AS Name ON SortingAtts 
+{
+	tableName = $3;
+	colsToCreate = $5;
+	dbFileType = $8;
+	sortOrder = $10;
+	queryType = Create;
+}
+
+| INSERT Name INTO Name
+{
+	dbFileToLoad = $2;
+	tableName = $4;
+	queryType = Insert;
+}
+
+| DROP TABLE Name{
+	tableName = $3;	
+	queryType = Drop;
+}
+
+| SET OUTPUT Name
+{
+	outputType = $3;
+	queryType = SetOutput;
+};
+
+ColList: ColList ',' Column
+{
+	$$ = (struct AttsToCreate *) malloc (sizeof (struct AttsToCreate));
+	$$->attDetails = $3;
+	$$->next = $1;
+}
+
+| Column
+{
+	$$ = (struct AttsToCreate *) malloc (sizeof (struct AttsToCreate));
+	$$->attDetails = $1;
+	$$->next = NULL;
+};
+
+Column : Name Name
+{
+	$$ = (struct AttDetails *) malloc (sizeof (struct AttDetails));
+	$$->name = $1;
+	$$->type = $2;
+};
+
+SortingAtts : SortingAtts ',' Name
+{
+	$$ = (struct SortOrder*) malloc (sizeof(struct SortOrder));
+	$$->attName = $3;
+	$$->next = $1;
+}
+
+| Name
+{
+	$$ = (struct SortOrder*) malloc (sizeof(struct SortOrder));
+	$$->attName = $1;
+	$$->next = NULL;
 };
 
 WhatIWant: Function ',' Atts 

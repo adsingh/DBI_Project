@@ -1,19 +1,24 @@
 
 #include <iostream>
-#include "ParseTree.h"
-#include <unordered_map>
-#include <vector>
-#include "Schema.h"
+#include <fstream>
 #include <string>
 #include <string.h>
 #include <sstream>
 #include <set>
-#include "QueryPlanNode.h"
+#include <unordered_map>
+#include <vector>
 #include <list>
-#include "Statistics.h"
 #include <map>
 #include <istream>
 #include <climits>
+
+#include "ParseTree.h"
+#include "QueryPlanNode.h"
+#include "Statistics.h"
+#include "Schema.h"
+#include "test.h"
+#include "SortedFile.h"
+#include "HeapFile.h"
 
 using namespace std;
 
@@ -30,6 +35,14 @@ extern struct NameList *groupingAtts;
 extern struct NameList *attsToSelect;
 extern int distinctAtts;
 extern int distinctFunc;
+
+extern char* tableName;
+extern char* dbFileType;
+extern struct AttsToCreate *colsToCreate;
+extern struct SortOrder* sortOrder;
+extern char* dbFileToLoad;
+extern char* outputType;
+extern QueryType queryType;
 
 void printNameList(struct NameList * list){
 	if(list != NULL){
@@ -146,28 +159,178 @@ string getRelName(char** strPtr);
 
 Schema* CombineSchema(Schema* schema1, Schema* schema2);
 
+void PrintSchema(Schema* sch);
+
 // *************************************  MAIN *******************************//
 int main () {
 
 	yyparse();
 
-	QueryPlanNode* queryPlan =  CreateQueryPlan();
-	QueryPlanNode::createPipes();
-	QueryPlanNode* node = queryPlan;
-	QueryPlanNode* lastNode;
-	while(node != NULL){
-		// node->Print();
-		node->Run();
-		if(node->next == NULL)
-			lastNode = node;
-		node = node->next;
+	// Setup the relations, create relnameToRelptr map
+	setup();
+	cout << "[MAIN] Setup Finished\n";
+
+	unordered_map<string, relation*> relnameToRelptr;
+	relation *rel_ptr[] = {n, r, c, p, ps, o, li, s};
+
+	for(int i = 0; i < NUM_RELATIONS; i++){
+		string relName(rel_ptr[i]->name());
+		// cout << "[MAIN] mapping relation : " << relName << endl;
+		relnameToRelptr[relName] = rel_ptr[i];
 	}
-	node = queryPlan;
-	QueryPlanNode::clear_pipe(lastNode, true);
-	while(node != NULL){
-		node->WaitUntilDone();
-		node = node->next;
-	}
+	cout << "[MAIN] created relnameToRelptr\n";
+	
+	switch(queryType){
+
+		// QueryType : CREATE
+		case Create:
+		{
+			DBFile dbFile;
+			string relName(tableName);
+
+			//Create Schema
+			vector<Attribute> attsVec;
+			while(colsToCreate != NULL){
+				Attribute a;
+				a.name = strdup(colsToCreate->attDetails->name);
+				if(strcmp(colsToCreate->attDetails->type, "INTEGER") == 0){
+					a.myType = Int;
+				}
+				else if(strcmp(colsToCreate->attDetails->type, "DOUBLE") == 0){
+					a.myType = Double;
+				}
+				else if(strcmp(colsToCreate->attDetails->type, "STRING") == 0){
+					a.myType = String;
+				}
+				else{
+					cout << "Invalid Attribute type... exiting application\n";
+					exit(1);
+				}
+				attsVec.push_back(a);
+				colsToCreate = colsToCreate->next;
+			}
+			
+			Attribute* atts = new Attribute[attsVec.size()];
+			int index = 0;
+			for(Attribute a: attsVec){
+				atts[index++] = a;
+			}
+			
+			Schema* relSchema = new Schema((char*) relName.c_str(), attsVec.size(), atts);
+			cout << "[MAIN][CREATE] created schema for relation: " << relName << "\n";
+			PrintSchema(relSchema);
+
+			if(strcmp(dbFileType, "HEAP") == 0){
+				dbFile.Create(relnameToRelptr[relName]->path(), heap, NULL);
+			}
+			else if(strcmp(dbFileType, "SORTED")==0){
+				// Create OrderMaker
+				OrderMaker *orderMaker = new OrderMaker(relSchema);
+				struct {OrderMaker *o; int l;} startup = {orderMaker , 10};
+				dbFile.Create(relnameToRelptr[relName]->path(), sorted, &startup);
+			}
+			else{
+				cout << "Invalid DBFile type... exiting application\n";
+				exit(1);
+			}
+
+			dbFile.Close();
+			break;
+		}
+		// QueryType : INSERT
+		case Insert:
+		{
+			DBFile dbFile;
+			string relName(tableName);
+			cout << "[MAIN][INSERT] Opening file from path: " << relnameToRelptr[relName]->path() << endl;
+			dbFile.Open(relnameToRelptr[relName]->path());
+
+			char tbl_path[100]; // construct path of the tpch flat text file
+			sprintf (tbl_path, "%s%s.tbl", tpch_dir, tableName); 
+			cout << " tpch file will be loaded from " << tbl_path << endl;
+
+			dbFile.Load (*relnameToRelptr[relName]->schema(), tbl_path);	
+			dbFile.Close();
+			break;
+		}
+		
+		// QueryType : SELECT
+		case Select:
+		{
+			//Check if outputType is NULL, set some default
+			ifstream outputCfg("OutPutCfg.txt");
+			string outputTypeStr;
+			if(outputCfg.is_open()){
+				cout << "[MAIN][SELECT] Reading outputType\n";
+				getline(outputCfg, outputTypeStr);
+				outputType = strdup(outputTypeStr.c_str());
+			}
+			else{
+				cout << "[MAIN][SELECT] Setting default outputType\n";
+				outputType = strdup("STDOUT");
+			}
+
+			QueryPlanNode* queryPlan =  CreateQueryPlan();
+			QueryPlanNode::createPipes();
+			QueryPlanNode* node = queryPlan;
+			QueryPlanNode* lastNode;
+
+			if(strcmp(outputType, "NONE") == 0){
+				while(node != NULL){
+					node->Print();
+					node = node->next;
+				}
+			}
+			else{
+				while(node != NULL){
+					// node->Print();
+					node->Run();
+					if(node->next == NULL)
+						lastNode = node;
+					node = node->next;
+				}
+				node = queryPlan;
+				// decide the ostream
+				streambuf * buf;
+				ofstream of;
+				if(strcmp(outputType, "STDOUT") == 0){
+					buf = cout.rdbuf();
+				}
+				else{
+
+					of.open(string(outputTypeStr.substr(1, outputTypeStr.length()-2)));
+					buf = of.rdbuf();
+				}
+				ostream out(buf);
+
+				QueryPlanNode::clear_pipe(lastNode, true, out);
+				while(node != NULL){
+					node->WaitUntilDone();
+					node = node->next;
+				}
+			}
+			break;
+		}
+
+		// QueryType : DROP
+		case Drop:
+		{
+
+			break;
+		}
+
+		case SetOutput:
+		{
+			ofstream outputCfg;
+			outputCfg.open("OutPutCfg.txt");
+			outputCfg << outputType;
+			outputCfg.close();
+
+			break;
+		}
+	};
+
+	
 	
 }
 

@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include "ParseTree.h"
+#include <string.h>
 
 using namespace std;
 
@@ -17,6 +18,14 @@ extern struct NameList *groupingAtts;
 extern struct NameList *attsToSelect;
 extern int distinctAtts;
 extern int distinctFunc;
+
+extern char* tableName;
+extern char* dbFileType;
+extern struct AttsToCreate *colsToCreate;
+extern struct SortOrder* sortOrder;
+extern char* dbFileToLoad;
+extern char* outputType;
+extern QueryType queryType;
 
 void printNameList(struct NameList * list){
 	if(list != NULL){
@@ -132,27 +141,63 @@ void printFuncOperator(struct FuncOperator * op, int level){
 int main () {
 
 	yyparse();
-	printFuncOperator(finalFunction, 1);
+	// printFuncOperator(finalFunction, 1);
 
-	cout << "********   AND LIST ***********\n";
-	PrintAndList(boolean);
-	cout << "\n\n";
+	// cout << "********   AND LIST ***********\n";
+	// PrintAndList(boolean);
+	// cout << "\n\n";
 
-	cout << "********   Table LIST ***********\n";
-	printTableList(tables);
-	cout << "\n\n";
+	// cout << "********   Table LIST ***********\n";
+	// printTableList(tables);
+	// cout << "\n\n";
 
-	cout << "********   Name LIST groupingAtts ***********\n";
-	printNameList(groupingAtts);
-	cout << "\n\n";
+	// cout << "********   Name LIST groupingAtts ***********\n";
+	// printNameList(groupingAtts);
+	// cout << "\n\n";
 
-	cout << "********   Name LIST attsToSelect***********\n";
-	printNameList(attsToSelect);
-	cout << "\n\n";
+	// cout << "********   Name LIST attsToSelect***********\n";
+	// printNameList(attsToSelect);
+	// cout << "\n\n";
 
-	cout << "********  distinctAtts ***********\n";
-	cout << distinctAtts << "\n\n";
+	// cout << "********  distinctAtts ***********\n";
+	// cout << distinctAtts << "\n\n";
 
-	cout << "********   distinctFunc ***********\n";
-	cout << distinctFunc << endl;
+	// cout << "********   distinctFunc ***********\n";
+	// cout << distinctFunc << endl;
+
+        // cout << "Table name: " << tableName << endl;
+        // cout << "DbFile Type: " << dbFileType << endl;
+
+        // while(colsToCreate != NULL){
+        //         cout << "Colname: " << colsToCreate->attDetails->name << " , Type: " << colsToCreate->attDetails->type << endl;
+        //         colsToCreate = colsToCreate->next;
+        // }
+
+        // if(strcmp(dbFileType, "SORTED") == 0){
+        //         cout << "Cols to sort on: \n";
+        //         int attCnt = 1;
+        //         while(sortOrder != NULL){
+        //                 cout << "Att " << attCnt++ << " : " << sortOrder->attName << endl;
+        //                 sortOrder = sortOrder->next;
+        //         }
+        // }
+
+        if(dbFileType != NULL){
+                cout << "dbFileType : "  << dbFileType << endl;
+        }
+
+        if(outputType != NULL){
+                cout << "outputType : " << outputType << endl;
+        }
+
+        if(tableName != NULL){
+                cout << "tableName: " << tableName << endl;
+        }
+
+        if(dbFileToLoad != NULL){
+                cout << "dbFileToLoad : "  << dbFileToLoad << endl;
+        }
+
+        cout << "QueryType : " << queryType << endl;
+
 }
