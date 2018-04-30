@@ -45,6 +45,7 @@
 	struct AttsToCreate *myColsToCreate;
 	struct SortOrder* mySortOrder;
 	struct AttDetails* myColDetails;
+	char* outputType;
 }
 
 %token <actualChars> Name
@@ -83,6 +84,7 @@
 %type <myColsToCreate> ColList
 %type <mySortOrder> SortingAtts
 %type <myColDetails> Column
+%type <outputType> OutputType
 
 %start SQL
 
@@ -129,7 +131,7 @@ SQL: SELECT WhatIWant FROM Tables WHERE AndList
 	queryType = Create;
 }
 
-| INSERT Name INTO Name
+| INSERT String INTO Name
 {
 	dbFileToLoad = $2;
 	tableName = $4;
@@ -141,10 +143,20 @@ SQL: SELECT WhatIWant FROM Tables WHERE AndList
 	queryType = Drop;
 }
 
-| SET OUTPUT Name
+| SET OUTPUT OutputType
 {
 	outputType = $3;
 	queryType = SetOutput;
+};
+
+OutputType : Name
+{
+	$$ = $1;
+}
+
+| String
+{
+	$$ = $1;
 };
 
 ColList: ColList ',' Column

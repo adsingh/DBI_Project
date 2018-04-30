@@ -298,7 +298,7 @@ int main () {
 				}
 				else{
 
-					of.open(string(outputTypeStr.substr(1, outputTypeStr.length()-2)));
+					of.open(string(outputTypeStr));
 					buf = of.rdbuf();
 				}
 				ostream out(buf);

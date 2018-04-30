@@ -109,7 +109,6 @@ void yyerror(char*s);
   			return(Name);
 			}  
 
-['][a-zA-Z0-9]*\.[a-zA-Z]*['] {yylval.actualChars = strdup(yytext); return(Name);}
 
 \'[^'\n]*\'            {/* take care of ' in a string */
                         if (yytext[yyleng - 2] == '\\') {
