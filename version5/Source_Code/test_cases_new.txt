@@ -31,7 +31,4 @@ SET OUTPUT NONE
 SET OUTPUT STDOUT
 SET OUTPUT 'results.txt'
 
-
-['][a-zA-Z0-9]+['] {yylval.actualChars = strdup(yytext); return(Name);}
-
-['][a-zA-Z0-9]*?\.[a-zA-Z]*['] {yylval.actualChars = strdup(yytext); return(Name);}
+DROP TABLE region

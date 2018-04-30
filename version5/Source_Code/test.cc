@@ -316,6 +316,9 @@ int main () {
 		case Drop:
 		{
 
+			cout << "[MAIN][DROP] dropping table : " << tableName << endl;
+			remove((string(tableName)+ ".bin").c_str());
+			remove((string(tableName)+ ".bin_config.txt").c_str());
 			break;
 		}
 
