@@ -33,7 +33,7 @@ string DBFile::GetFileName(const char* f_path){
     char *file_name = (char*) malloc(sizeof(char)*100);
     strcpy(file_name, temp);
     strcat(file_name, "_config.txt");
-    free(dup);
+    //free(dup);
     string str(file_name);
     return str;
     

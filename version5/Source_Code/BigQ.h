@@ -25,11 +25,15 @@ private:
 	}thread_data;
 
 	thread_data worker_args;
+	static pthread_mutex_t bigQMutex;
+	
 
 public:
 
 	BigQ (Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen);
 	~BigQ ();
+	static void initializeMutex();
+	pthread_t * worker;
 };
 
 #endif

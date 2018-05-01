@@ -11,6 +11,7 @@
 #include <map>
 #include <istream>
 #include <climits>
+#include <unistd.h>
 
 #include "ParseTree.h"
 #include "QueryPlanNode.h"
@@ -168,6 +169,8 @@ int main () {
 
 	// Setup the relations, create relnameToRelptr map
 	setup();
+
+	BigQ::initializeMutex();
 	cout << "[MAIN] Setup Finished\n";
 
 	unordered_map<string, relation*> relnameToRelptr;
@@ -332,8 +335,6 @@ int main () {
 			break;
 		}
 	};
-
-	
 	
 }
 

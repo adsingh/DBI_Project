@@ -156,6 +156,7 @@ Schema :: Schema (char *fName, char *relName) {
 }
 
 Schema :: ~Schema () {
+	// cout <<"[Schema.cc] Deleting myAtts" << endl;
 	delete [] myAtts;
 	myAtts = 0;
 }

@@ -346,23 +346,23 @@ void *Join::workHandler(void *args) {
 	if(worker_args->selOp->GetSortOrders(*order_left, *order_right) != 0) {
 		cout << "[Join][workHandler] Order Maker can be used" << endl;
 		// Initilization for BigQ
-		Pipe l_sorted(PIPE_BUFF_SIZE);
-		Pipe r_sorted(PIPE_BUFF_SIZE);
+		Pipe *l_sorted = new Pipe(PIPE_BUFF_SIZE);
+		Pipe *r_sorted = new Pipe(PIPE_BUFF_SIZE);
 		int runlen = 10;
 
 		// Hack to get number of records before sorting
 				
 		cout << "[Join][workHandler] BigQs Started" << endl;
-		BigQ bqL (*(worker_args->inPipeL), l_sorted, *order_left ,10);
-		BigQ bqR (*(worker_args->inPipeR), r_sorted, *order_right,10);
+		BigQ *bqL = new BigQ(*(worker_args->inPipeL), *l_sorted, *order_left ,10);
+		BigQ *bqR = new BigQ(*(worker_args->inPipeR), *r_sorted, *order_right,10);
 
 		cout << "[Join][workHandler] BigQs Done" << endl;
 		Record *leftRecord = new Record();
 		Record *rightRecord = new Record();
 		
 		// cout << "[Join][workHandler] *********** bef *********\n";
-		bool leftPipeEmpty = l_sorted.Remove(leftRecord) == 0;
-		bool rightPipeEmpty = r_sorted.Remove(rightRecord) == 0;
+		bool leftPipeEmpty = l_sorted->Remove(leftRecord) == 0;
+		bool rightPipeEmpty = r_sorted->Remove(rightRecord) == 0;
 
 		// Get the number of attributes
 
@@ -416,13 +416,13 @@ void *Join::workHandler(void *args) {
 
 				tempLeftRecord = new Record();
 				tempRightRecord = new Record();
-				leftPipeEmpty = l_sorted.Remove(tempLeftRecord) == 0;
-				rightPipeEmpty = r_sorted.Remove(tempRightRecord) == 0;
+				leftPipeEmpty = l_sorted->Remove(tempLeftRecord) == 0;
+				rightPipeEmpty = r_sorted->Remove(tempRightRecord) == 0;
 
 				while(!leftPipeEmpty && (comp.Compare(leftRecord, tempLeftRecord, order_left) == 0)) {
 					leftPipeRecords.push_back(tempLeftRecord);
 					tempLeftRecord = new Record();
-					leftPipeEmpty = l_sorted.Remove(tempLeftRecord) == 0;
+					leftPipeEmpty = l_sorted->Remove(tempLeftRecord) == 0;
 				}
 
 				if(!leftPipeEmpty)
@@ -431,7 +431,7 @@ void *Join::workHandler(void *args) {
 				while(!rightPipeEmpty && (comp.Compare(rightRecord, tempRightRecord, order_right)== 0)) {
 					rightPipeRecords.push_back(tempRightRecord);
 					tempRightRecord = new Record();
-					rightPipeEmpty = r_sorted.Remove(tempRightRecord) == 0;
+					rightPipeEmpty = r_sorted->Remove(tempRightRecord) == 0;
 				}
 
 				if(!rightPipeEmpty)
@@ -455,10 +455,10 @@ void *Join::workHandler(void *args) {
 
 			} // Left is smaller. Take a new record from left pipe 
 			else if(compResult < 0) {
-				leftPipeEmpty = l_sorted.Remove(leftRecord) == 0;
+				leftPipeEmpty = l_sorted->Remove(leftRecord) == 0;
 			} // Right is smaller. Take a new record from right pipe  
 			else {
-				rightPipeEmpty = r_sorted.Remove(rightRecord) == 0;
+				rightPipeEmpty = r_sorted->Remove(rightRecord) == 0;
 			}
 		}
 
@@ -534,7 +534,7 @@ void *Join::workHandler(void *args) {
 				tempFile.MoveFirst();
 
 				while(tempFile.GetNext(leftRec)){
-					for(rightRec : recVec){
+					for(auto rightRec : recVec){
 						if(comp.Compare(&leftRec, rightRec, worker_args->literal, worker_args->selOp) != 0){
 							
 							if(attsToKeep == NULL){
@@ -629,16 +629,16 @@ void * DuplicateRemoval::workHandler(void * args){
 	thread_data *worker_args = (thread_data *) args;
 	OrderMaker orderMaker(worker_args->schema);
 
-	Pipe sortedOutputPipe(PIPE_BUFF_SIZE);
+	Pipe *sortedOutputPipe=new Pipe(PIPE_BUFF_SIZE);
 
-	BigQ queue(*(worker_args->inPipe), sortedOutputPipe, orderMaker, 1);
+	BigQ *queue = new BigQ(*(worker_args->inPipe), *sortedOutputPipe, orderMaker, 1);
 
 	Record currentRecord, prevRecord;
 
 	ComparisonEngine comp;
 
 
-	while(sortedOutputPipe.Remove(&currentRecord)){
+	while(sortedOutputPipe->Remove(&currentRecord)){
 
 		if(!prevRecord.IsNull() && comp.Compare(&currentRecord, &prevRecord, &orderMaker) == 0)
 			continue;
@@ -825,9 +825,9 @@ void * GroupBy::workHandler(void * args){
 	// Fetch the passed arguments
 	thread_data *worker_args = (thread_data *) args;
 
-	Pipe sortedOutputPipe(PIPE_BUFF_SIZE);
+	Pipe *sortedOutputPipe = new Pipe(PIPE_BUFF_SIZE);
 
-	BigQ queue(*(worker_args->inPipe), sortedOutputPipe, *(worker_args->orderMaker), 100);
+	BigQ *queue = new BigQ(*(worker_args->inPipe), *sortedOutputPipe, *(worker_args->orderMaker), 100);
 	cout << "[GroupBy][workHandler] Got sorted output\n";
 
 	Record currRecord, prevRecord;
@@ -846,7 +846,7 @@ void * GroupBy::workHandler(void * args){
 	set<double> doubleResults;
 	// Changes for handling DISTINCT aggregate
 
-	while(!(pipeEmpty = sortedOutputPipe.Remove(&currRecord)==0) || !processingFinished){
+	while(!(pipeEmpty = sortedOutputPipe->Remove(&currRecord)==0) || !processingFinished){
 
 		
 		if(prevRecord.IsNull()){

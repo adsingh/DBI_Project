@@ -8,12 +8,15 @@
 using namespace std;
 int BigQ :: numOfInstances = 0;
 
-BigQ :: BigQ (Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
-	
-	// Initializing the worker Thread
-	numOfInstances++;
+void BigQ:: initializeMutex() {
+	pthread_mutex_init(&bigQMutex, NULL);
+}
 
-	pthread_t worker;
+pthread_mutex_t BigQ::bigQMutex;
+
+BigQ :: BigQ (Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
+
+	worker = (pthread_t*) malloc(sizeof(pthread_t));
 	pthread_attr_t attr;
 	int retVal;
     // void *status;
@@ -25,11 +28,15 @@ BigQ :: BigQ (Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
 	worker_args.out = &out;
 	worker_args.sortorder = &sortorder;
 	worker_args.runlen = runlen;
+
+	pthread_mutex_lock (&bigQMutex);
+	numOfInstances++;
 	worker_args.filename = to_string(numOfInstances);
+	pthread_mutex_unlock (&bigQMutex);
 	
 	// Creating Worker Thread
 	// retVal = pthread_create(&worker, NULL, externalSortWorker, (void *) &worker_args);
-	retVal = pthread_create(&worker, &attr, externalSortWorker, (void *) &worker_args);    
+	retVal = pthread_create(worker, &attr, externalSortWorker, (void *) &worker_args);    
 }
 
 void *BigQ :: externalSortWorker(void* args){
@@ -221,4 +228,5 @@ void *BigQ :: externalSortWorker(void* args){
 }
 
 BigQ::~BigQ () {
+	pthread_mutex_destroy (&bigQMutex);
 }
