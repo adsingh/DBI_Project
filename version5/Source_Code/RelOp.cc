@@ -6,7 +6,7 @@
 
 void SelectPipe::Run (Pipe &inPipe, Pipe &outPipe, CNF &selOp, Record &literal) {
 
-	cout << "[SelectPipe][Run] Start" << endl;
+	//cout << "[SelectPipe][Run] Start" << endl;
 	pthread_attr_t attr;
 	int retVal;
 
@@ -20,20 +20,20 @@ void SelectPipe::Run (Pipe &inPipe, Pipe &outPipe, CNF &selOp, Record &literal) 
 	workerArgs.totalPages = totalPages == 0 ? 1 : totalPages;
 
 	retVal = pthread_create(&worker, &attr, workHandler, (void *) &workerArgs);
-	cout << "[SelectPipe][Run] Created new thread" << endl;
+	//cout << "[SelectPipe][Run] Created new thread" << endl;
 	if(retVal) {
-		cout << "[SelectPipe][Run] Error in pthread_create" << endl;
+		//cout << "[SelectPipe][Run] Error in pthread_create" << endl;
 		exit(1);
 	}
 	pthread_attr_destroy(&attr);
-	cout << "[SelectPipe][Run] End" << endl;
+	//cout << "[SelectPipe][Run] End" << endl;
 }
 void SelectPipe::WaitUntilDone () {
 	void* status;
 	int retVal;
 	retVal = pthread_join(worker, &status);
 	if(retVal) {
-		cout << "[SelectPipe][WaitUntilDone] Error in pthread_join" << endl;
+		//cout << "[SelectPipe][WaitUntilDone] Error in pthread_join" << endl;
 		exit(1);
 	}
 }
@@ -42,7 +42,7 @@ void SelectPipe::Use_n_Pages (int n) {
 }
 
 void *SelectPipe::workHandler(void *args) {
-	cout << "[SelectPipe][selectPipeWorker] Start" << endl;
+	//cout << "[SelectPipe][selectPipeWorker] Start" << endl;
 	thread_data *worker_args = (thread_data *) args;
 	Page* pageArr[worker_args->totalPages]; 
 	// Initialize all Pages
@@ -91,11 +91,11 @@ void *SelectPipe::workHandler(void *args) {
 
 	worker_args->out->ShutDown();
 
-	cout << "[SelectPipe][selectPipeWorker] End" << endl;
+	//cout << "[SelectPipe][selectPipeWorker] End" << endl;
 }
 
 void SelectFile::Run (DBFile &inFile, Pipe &outPipe, CNF &selOp, Record &literal) {
-	cout << "[SelectFile][Run] Start" << endl;
+	//cout << "[SelectFile][Run] Start" << endl;
 	pthread_attr_t attr;
 	int retVal;
 
@@ -109,13 +109,13 @@ void SelectFile::Run (DBFile &inFile, Pipe &outPipe, CNF &selOp, Record &literal
 	workerArgs.totalPages = totalPages == 0 ? 1 : totalPages;
 
 	retVal = pthread_create(&worker, &attr, workHandler, (void *) &workerArgs);
-	cout << "[SelectFile][Run] Created new thread" << endl;
+	//cout << "[SelectFile][Run] Created new thread" << endl;
 	if(retVal) {
-		cout << "[SelectFile][Run] Error in pthread_create" << endl;
+		//cout << "[SelectFile][Run] Error in pthread_create" << endl;
 		exit(1);
 	}
 	pthread_attr_destroy(&attr);
-	cout << "[SelectFile][Run] End" << endl;
+	//cout << "[SelectFile][Run] End" << endl;
 }
 
 void SelectFile::WaitUntilDone () {
@@ -123,7 +123,7 @@ void SelectFile::WaitUntilDone () {
 	int retVal;
 	retVal = pthread_join(worker, &status);
 	if(retVal) {
-		cout << "[SelectFile][WaitUntilDone] Error in pthread_join; error no = " << retVal << endl;
+		//cout << "[SelectFile][WaitUntilDone] Error in pthread_join; error no = " << retVal << endl;
 		exit(1);
 	}
 }
@@ -133,7 +133,7 @@ void SelectFile::Use_n_Pages (int runlen) {
 }
 
 void *SelectFile::workHandler(void *args) {
-	cout << "[SelectFile][selectFileWorker] Start" << endl;
+	//cout << "[SelectFile][selectFileWorker] Start" << endl;
 
 	thread_data *worker_args = (thread_data *) args;
 	Page* pageArr[worker_args->totalPages]; 
@@ -142,9 +142,9 @@ void *SelectFile::workHandler(void *args) {
 	for(int i = 0; i < worker_args->totalPages; i++) {
 		pageArr[i] = new Page();
 	}
-	cout << "[SelectFile][selectFileWorker] moving first\n";
+	//cout << "[SelectFile][selectFileWorker] moving first\n";
 	worker_args->inFile->MoveFirst();
-	cout << "[SelectFile][selectFileWorker] moved first\n";
+	//cout << "[SelectFile][selectFileWorker] moved first\n";
 	// Indicates the no of pages filled
 	int currentPageNo = 0;
 	Record* record = new Record();
@@ -168,12 +168,12 @@ void *SelectFile::workHandler(void *args) {
 		}
 		
 	}
-	cout << "[SelectFile][selectFileWorker] while finished\n";
+	//cout << "[SelectFile][selectFileWorker] while finished\n";
 	
 	// Insert the remaining records into output pipe
 	for(int i = 0; i <= currentPageNo; i++) {
 		while(pageArr[i]->GetFirst(tempRecord) == 1) {
-			//cout << "[SelectFile][workHandler] Attributes found after retrieving from Page : " << record->GetNoOfAttributes() << endl;
+			////cout << "[SelectFile][workHandler] Attributes found after retrieving from Page : " << record->GetNoOfAttributes() << endl;
 			worker_args->outPipe->Insert(tempRecord);
 		}
 	}
@@ -185,12 +185,12 @@ void *SelectFile::workHandler(void *args) {
 	delete tempRecord;
 	
 	worker_args->outPipe->ShutDown();
-	cout << "[SelectFile][selectFileWorker] Pipe Shutdown" << endl;
-	cout << "[SelectFile][selectFileWorker] End for file" << endl;
+	//cout << "[SelectFile][selectFileWorker] Pipe Shutdown" << endl;
+	//cout << "[SelectFile][selectFileWorker] End for file" << endl;
 }
 
 void Project::Run (Pipe &inPipe, Pipe &outPipe, int *keepMe, int numAttsInput, int numAttsOutput) {
-	cout << "[Project][Run] Start" << endl;
+	//cout << "[Project][Run] Start" << endl;
 	pthread_attr_t attr;
 	int retVal;
 
@@ -205,13 +205,13 @@ void Project::Run (Pipe &inPipe, Pipe &outPipe, int *keepMe, int numAttsInput, i
 	workerArgs.totalPages = totalPages == 0 ? 1 : totalPages;
 
 	retVal = pthread_create(&worker, &attr, workHandler, (void *) &workerArgs);
-	cout << "[Project][Run] Created new thread total pages = " << workerArgs.totalPages << endl;
+	//cout << "[Project][Run] Created new thread total pages = " << workerArgs.totalPages << endl;
 	if(retVal) {
-		cout << "[Project][Run] Error in pthread_create" << endl;
+		//cout << "[Project][Run] Error in pthread_create" << endl;
 		exit(1);
 	}
 	pthread_attr_destroy(&attr);
-	cout << "[Project][Run] End" << endl;
+	//cout << "[Project][Run] End" << endl;
 }
 
 void Project::WaitUntilDone () {
@@ -219,7 +219,7 @@ void Project::WaitUntilDone () {
 	int retVal;
 	retVal = pthread_join(worker, &status);
 	if(retVal) {
-		cout << "[Project][WaitUntilDone] Error in pthread_join" << endl;
+		//cout << "[Project][WaitUntilDone] Error in pthread_join" << endl;
 		exit(1);
 	}
 }
@@ -229,10 +229,10 @@ void Project::Use_n_Pages(int n) {
 }
 
 void *Project::workHandler(void *args) {
-	cout << "[Project][projectWorker] Start" << endl;
+	//cout << "[Project][projectWorker] Start" << endl;
 	thread_data *worker_args = (thread_data *) args;
 	Page* pageArr[worker_args->totalPages]; 
-	cout << "[Project][projectWorker] total pages = " << worker_args->totalPages << endl;
+	//cout << "[Project][projectWorker] total pages = " << worker_args->totalPages << endl;
 	// Initialize all Pages
 	for(int i = 0; i < worker_args->totalPages; i++) {
 		pageArr[i] = new Page();
@@ -269,7 +269,7 @@ void *Project::workHandler(void *args) {
 	
 	// Insert the remaining records into output pipe
 	for(int i = 0; i <= currentPageNo; i++) {
-		// cout << "[Project][projectWorker]Adding remaining Pages " << endl;
+		// //cout << "[Project][projectWorker]Adding remaining Pages " << endl;
 		while(pageArr[i]->GetFirst(tempRecord) == 1) {
 			worker_args->outPipe->Insert(tempRecord);
 		}
@@ -282,11 +282,11 @@ void *Project::workHandler(void *args) {
 	delete tempRecord;
 
 	worker_args->outPipe->ShutDown();
-	cout << "[Project][projectWorker] End" << endl;
+	//cout << "[Project][projectWorker] End" << endl;
 }
 
 void Join::Run (Pipe &inPipeL, Pipe &inPipeR, Pipe &outPipe, CNF &selOp, Record &literal) {
-	cout << "[Join][Run] Start" << endl;
+	//cout << "[Join][Run] Start" << endl;
 	pthread_attr_t attr;
 	int retVal;
 
@@ -301,13 +301,13 @@ void Join::Run (Pipe &inPipeL, Pipe &inPipeR, Pipe &outPipe, CNF &selOp, Record 
 	workerArgs.totalPages = totalPages == 0 ? 1 : totalPages;
 
 	retVal = pthread_create(&worker, &attr, workHandler, (void *) &workerArgs);
-	cout << "[Join][Run] Created new thread" << endl;
+	//cout << "[Join][Run] Created new thread" << endl;
 	if(retVal) {
-		cout << "[Join][Run] Error in pthread_create" << endl;
+		//cout << "[Join][Run] Error in pthread_create" << endl;
 		exit(1);
 	}
 	pthread_attr_destroy(&attr);
-	cout << "[Join][Run] End" << endl;
+	//cout << "[Join][Run] End" << endl;
 }
 
 void Join::WaitUntilDone () {
@@ -315,7 +315,7 @@ void Join::WaitUntilDone () {
 	int retVal;
 	retVal = pthread_join(worker, &status);
 	if(retVal) {
-		cout << "[Join][WaitUntilDone] Error in pthread_join" << endl;
+		//cout << "[Join][WaitUntilDone] Error in pthread_join" << endl;
 		exit(1);
 	}
 }
@@ -325,7 +325,7 @@ void Join::Use_n_Pages(int n) {
 }
 
 void *Join::workHandler(void *args) {
-	cout << "[Join][joinWorker] Start" << endl;
+	//cout << "[Join][joinWorker] Start" << endl;
 	thread_data *worker_args = (thread_data *) args;
 	
 	// Can do this later in merging stage ?
@@ -344,7 +344,7 @@ void *Join::workHandler(void *args) {
 	Record *mergedRecord;
 
 	if(worker_args->selOp->GetSortOrders(*order_left, *order_right) != 0) {
-		cout << "[Join][workHandler] Order Maker can be used" << endl;
+		//cout << "[Join][workHandler] Order Maker can be used" << endl;
 		// Initilization for BigQ
 		Pipe *l_sorted = new Pipe(PIPE_BUFF_SIZE);
 		Pipe *r_sorted = new Pipe(PIPE_BUFF_SIZE);
@@ -352,15 +352,15 @@ void *Join::workHandler(void *args) {
 
 		// Hack to get number of records before sorting
 				
-		cout << "[Join][workHandler] BigQs Started" << endl;
+		//cout << "[Join][workHandler] BigQs Started" << endl;
 		BigQ *bqL = new BigQ(*(worker_args->inPipeL), *l_sorted, *order_left ,10);
 		BigQ *bqR = new BigQ(*(worker_args->inPipeR), *r_sorted, *order_right,10);
 
-		cout << "[Join][workHandler] BigQs Done" << endl;
+		//cout << "[Join][workHandler] BigQs Done" << endl;
 		Record *leftRecord = new Record();
 		Record *rightRecord = new Record();
 		
-		// cout << "[Join][workHandler] *********** bef *********\n";
+		// //cout << "[Join][workHandler] *********** bef *********\n";
 		bool leftPipeEmpty = l_sorted->Remove(leftRecord) == 0;
 		bool rightPipeEmpty = r_sorted->Remove(rightRecord) == 0;
 
@@ -374,8 +374,8 @@ void *Join::workHandler(void *args) {
 			numAttsRight = ((int *)rightRecord->bits)[1] / sizeof(int) - 1;
 		}
 
-		cout << "[Join][workHandler] numAttsLeft : " << numAttsLeft << endl;
-		cout << "[Join][workHandler] numAttsRight : " << numAttsRight << endl;
+		//cout << "[Join][workHandler] numAttsLeft : " << numAttsLeft << endl;
+		//cout << "[Join][workHandler] numAttsRight : " << numAttsRight << endl;
 
 		int compResult;
 		
@@ -383,7 +383,7 @@ void *Join::workHandler(void *args) {
 
 		if(numAttsToKeep == 0){
 			worker_args->outPipe->ShutDown();
-			cout << "[Join][workHandler] Zero Attributes Given\n";
+			//cout << "[Join][workHandler] Zero Attributes Given\n";
 			exit(1);
 		}
 
@@ -437,7 +437,7 @@ void *Join::workHandler(void *args) {
 				if(!rightPipeEmpty)
 					rightRecord->Copy(tempRightRecord);
 
-				// cout << "[Join][workHandler] vector sizes : " << leftPipeRecords.size() << ", " << rightPipeRecords.size() << endl;
+				// //cout << "[Join][workHandler] vector sizes : " << leftPipeRecords.size() << ", " << rightPipeRecords.size() << endl;
 				for(Record* outer: leftPipeRecords) {
 					for(Record* inner: rightPipeRecords) {
 						if(comp.Compare(outer, inner, worker_args->literal, worker_args->selOp) != 0){
@@ -464,7 +464,7 @@ void *Join::workHandler(void *args) {
 
 	} else { // Cannot get OrderMakers. Use Block nested Joins
 
-		cout << "[Join][Worker] Using Block nested Joins\n";
+		//cout << "[Join][Worker] Using Block nested Joins\n";
 
 		attsToKeep = NULL;
 
@@ -499,7 +499,7 @@ void *Join::workHandler(void *args) {
 
 		// ***************  Temp code ends  **************
 
-		cout << "[Join][Worker] temp file for left pipe created with " << noOfRecordsAddedToFile << " records\n";
+		//cout << "[Join][Worker] temp file for left pipe created with " << noOfRecordsAddedToFile << " records\n";
 
 		// Fill the buffer with records from right pipe and proceed to nested-loop join, repeat the process
 
@@ -513,7 +513,7 @@ void *Join::workHandler(void *args) {
 		Record* rightRec;
 
 		// Starting the processing
-		cout << "[Join][Worker] Nested-Loop Join started\n";
+		//cout << "[Join][Worker] Nested-Loop Join started\n";
 		int blockCount = 0;
 
 		while(!(pipeEmpty = worker_args->inPipeR->Remove(recPointer) == 0) || (recVec.size() > 0)){
@@ -529,7 +529,7 @@ void *Join::workHandler(void *args) {
 				
 				blockCount++;
 
-				cout << "[Join][Worker] Processing block " << blockCount << " with record count = " << recVec.size() << endl;
+				//cout << "[Join][Worker] Processing block " << blockCount << " with record count = " << recVec.size() << endl;
 
 				tempFile.MoveFirst();
 
@@ -582,12 +582,12 @@ void *Join::workHandler(void *args) {
 	}
 
 	worker_args->outPipe->ShutDown();
-	cout << "[Join][workHandler] End" << endl;
+	//cout << "[Join][workHandler] End" << endl;
 }
 
 void DuplicateRemoval::Run (Pipe &inPipe, Pipe &outPipe, Schema &mySchema) {
 	
-	cout << "[DuplicateRemoval][Run] Start" << endl;
+	//cout << "[DuplicateRemoval][Run] Start" << endl;
 	pthread_attr_t attr;
 	int retVal;
 
@@ -600,13 +600,13 @@ void DuplicateRemoval::Run (Pipe &inPipe, Pipe &outPipe, Schema &mySchema) {
 	workerArgs.totalPages = totalPages == 0 ? 1 : totalPages;
 
 	retVal = pthread_create(&worker, &attr, workHandler, (void *) &workerArgs);
-	cout << "[DuplicateRemoval][Run] Created new thread" << endl;
+	//cout << "[DuplicateRemoval][Run] Created new thread" << endl;
 	if(retVal) {
-		cout << "[DuplicateRemoval][Run] Error in pthread_create" << endl;
+		//cout << "[DuplicateRemoval][Run] Error in pthread_create" << endl;
 		exit(1);
 	}
 	pthread_attr_destroy(&attr);
-	cout << "[DuplicateRemoval][Run] End" << endl;
+	//cout << "[DuplicateRemoval][Run] End" << endl;
 }
 
 void DuplicateRemoval::WaitUntilDone () {
@@ -614,7 +614,7 @@ void DuplicateRemoval::WaitUntilDone () {
 	int retVal;
 	retVal = pthread_join(worker, &status);
 	if(retVal) {
-		cout << "[DuplicateRemoval][WaitUntilDone] Error in pthread_join" << endl;
+		//cout << "[DuplicateRemoval][WaitUntilDone] Error in pthread_join" << endl;
 		exit(1);
 	}
 }
@@ -625,7 +625,7 @@ void DuplicateRemoval::Use_n_Pages (int runlen) {
 
 void * DuplicateRemoval::workHandler(void * args){
 
-	cout << "[DuplicateRemoval][workHandler] Start" << endl;
+	//cout << "[DuplicateRemoval][workHandler] Start" << endl;
 	thread_data *worker_args = (thread_data *) args;
 	OrderMaker orderMaker(worker_args->schema);
 
@@ -649,13 +649,13 @@ void * DuplicateRemoval::workHandler(void * args){
 	}
 
 	worker_args->outPipe->ShutDown();
-	cout << "[DuplicateRemoval][workHandler] End" << endl;
+	//cout << "[DuplicateRemoval][workHandler] End" << endl;
 
 }
 
 void Sum::Run (Pipe &inPipe, Pipe &outPipe, Function &computeMe, bool isDistinctSum) {
 	
-	cout << "[Sum][Run] Start" << endl;
+	//cout << "[Sum][Run] Start" << endl;
 	pthread_attr_t attr;
 	int retVal;
 
@@ -669,13 +669,13 @@ void Sum::Run (Pipe &inPipe, Pipe &outPipe, Function &computeMe, bool isDistinct
 	workerArgs.isDistinctSum = isDistinctSum;
 
 	retVal = pthread_create(&worker, &attr, workHandler, (void *) &workerArgs);
-	cout << "[Sum][Run] Created new thread" << endl;
+	//cout << "[Sum][Run] Created new thread" << endl;
 	if(retVal) {
-		cout << "[Sum][Run] Error in pthread_create" << endl;
+		//cout << "[Sum][Run] Error in pthread_create" << endl;
 		exit(1);
 	}
 	pthread_attr_destroy(&attr);
-	cout << "[Sum][Run] End" << endl;
+	//cout << "[Sum][Run] End" << endl;
 }
 
 void Sum::WaitUntilDone () {
@@ -683,7 +683,7 @@ void Sum::WaitUntilDone () {
 	int retVal;
 	retVal = pthread_join(worker, &status);
 	if(retVal) {
-		cout << "[Sum][WaitUntilDone] Error in pthread_join" << endl;
+		//cout << "[Sum][WaitUntilDone] Error in pthread_join" << endl;
 		exit(1);
 	}
 }
@@ -694,7 +694,7 @@ void Sum::Use_n_Pages (int runlen) {
 
 void * Sum::workHandler(void * args){
 
-	cout << "[Sum][workHandler] Start" << endl;
+	//cout << "[Sum][workHandler] Start" << endl;
 
 	// Fetch the passed arguments
 	thread_data *worker_args = (thread_data *) args;
@@ -729,7 +729,7 @@ void * Sum::workHandler(void * args){
 		}
 	}
 
-	cout << "[Sum][worker] total records = " << recCnt << endl;
+	//cout << "[Sum][worker] total records = " << recCnt << endl;
 	// Create the output record
 
 	Attribute att;
@@ -768,14 +768,14 @@ void * Sum::workHandler(void * args){
 	worker_args->outPipe->Insert(&rec);
 	worker_args->outPipe->ShutDown();
 	
-	cout << "[Sum][workHandler] End" << endl;
+	//cout << "[Sum][workHandler] End" << endl;
 
 }
 
 // *************  GROUPBY ****************
 void GroupBy::Run (Pipe &inPipe, Pipe &outPipe, OrderMaker &groupAtts, Function &computeMe, bool isDistinctGroupBy) { 
 	
-	cout << "[GroupBy][Run] Start" << endl;
+	//cout << "[GroupBy][Run] Start" << endl;
 	pthread_attr_t attr;
 	int retVal;
 
@@ -790,13 +790,13 @@ void GroupBy::Run (Pipe &inPipe, Pipe &outPipe, OrderMaker &groupAtts, Function 
 	workerArgs.isDistinctGroupBy = isDistinctGroupBy;
 
 	retVal = pthread_create(&worker, &attr, workHandler, (void *) &workerArgs);
-	cout << "[GroupBy][Run] Created new thread" << endl;
+	//cout << "[GroupBy][Run] Created new thread" << endl;
 	if(retVal) {
-		cout << "[GroupBy][Run] Error in pthread_create" << endl;
+		//cout << "[GroupBy][Run] Error in pthread_create" << endl;
 		exit(1);
 	}
 	pthread_attr_destroy(&attr);
-	cout << "[GroupBy][Run] End" << endl;
+	//cout << "[GroupBy][Run] End" << endl;
 }
 
 void GroupBy::WaitUntilDone () { 
@@ -804,7 +804,7 @@ void GroupBy::WaitUntilDone () {
 	int retVal;
 	retVal = pthread_join(worker, &status);
 	if(retVal) {
-		cout << "[GroupBy][WaitUntilDone] Error in pthread_join" << endl;
+		//cout << "[GroupBy][WaitUntilDone] Error in pthread_join" << endl;
 		exit(1);
 	}
 }
@@ -815,7 +815,7 @@ void GroupBy::Use_n_Pages (int runlen) {
 
 void * GroupBy::workHandler(void * args){
 
-	cout << "[GroupBy][workHandler] Start\n";
+	//cout << "[GroupBy][workHandler] Start\n";
 
 	// Attribute for integer, string and double data types
 	Attribute intAttr = {"Integer",Int};
@@ -828,7 +828,7 @@ void * GroupBy::workHandler(void * args){
 	Pipe *sortedOutputPipe = new Pipe(PIPE_BUFF_SIZE);
 
 	BigQ *queue = new BigQ(*(worker_args->inPipe), *sortedOutputPipe, *(worker_args->orderMaker), 100);
-	cout << "[GroupBy][workHandler] Got sorted output\n";
+	//cout << "[GroupBy][workHandler] Got sorted output\n";
 
 	Record currRecord, prevRecord;
 	int runningIntSum, res1= 0;
@@ -891,7 +891,7 @@ void * GroupBy::workHandler(void * args){
 			// Create record
 			recBits = new (std::nothrow) char[PAGE_SIZE];
 			if(recBits == NULL){
-				cout << "[GroupBy][workHandler] Not enough memory!! Exiting....\n";
+				//cout << "[GroupBy][workHandler] Not enough memory!! Exiting....\n";
 				exit(1);
 			}
 
@@ -1007,16 +1007,16 @@ void * GroupBy::workHandler(void * args){
 
 	}
 
-	cout << "[GroupBy][workHandler] No of groups = " << cnt << endl;
+	//cout << "[GroupBy][workHandler] No of groups = " << cnt << endl;
 
 	worker_args->outPipe->ShutDown();
-	cout << "[GroupBy][workHandler] End\n";
+	//cout << "[GroupBy][workHandler] End\n";
 }
 
 // ***********  WriteOut  ***************
 
 void WriteOut::Run (Pipe &inPipe, FILE *outFile, Schema &mySchema){
-	cout << "[WriteOut][Run] Start" << endl;
+	//cout << "[WriteOut][Run] Start" << endl;
 	pthread_attr_t attr;
 	int retVal;
 
@@ -1029,13 +1029,13 @@ void WriteOut::Run (Pipe &inPipe, FILE *outFile, Schema &mySchema){
 	workerArgs.totalPages = totalPages == 0 ? 1 : totalPages;
 
 	retVal = pthread_create(&worker, &attr, workHandler, (void *) &workerArgs);
-	cout << "[WriteOut][Run] Created new thread" << endl;
+	//cout << "[WriteOut][Run] Created new thread" << endl;
 	if(retVal) {
-		cout << "[WriteOut][Run] Error in pthread_create" << endl;
+		//cout << "[WriteOut][Run] Error in pthread_create" << endl;
 		exit(1);
 	}
 	pthread_attr_destroy(&attr);
-	cout << "[WriteOut][Run] End" << endl;
+	//cout << "[WriteOut][Run] End" << endl;
 }
 
 void WriteOut::WaitUntilDone (){
@@ -1043,7 +1043,7 @@ void WriteOut::WaitUntilDone (){
 	int retVal;
 	retVal = pthread_join(worker, &status);
 	if(retVal) {
-		cout << "[WriteOut][WaitUntilDone] Error in pthread_join" << endl;
+		//cout << "[WriteOut][WaitUntilDone] Error in pthread_join" << endl;
 		exit(1);
 	}
 }
@@ -1054,7 +1054,7 @@ void WriteOut::Use_n_Pages (int n){
 
 void *WriteOut::workHandler(void *args){
 
-	cout << "[WriteOut][workHandler] Start\n";
+	//cout << "[WriteOut][workHandler] Start\n";
 
 	// Fetch the passed arguments
 	thread_data *worker_args = (thread_data *) args;
@@ -1116,5 +1116,5 @@ void *WriteOut::workHandler(void *args){
 	}
 
 	fclose(worker_args->file);
-	cout << "[WriteOut][workHandler] End\n";
+	//cout << "[WriteOut][workHandler] End\n";
 }

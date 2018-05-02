@@ -64,7 +64,7 @@ int HeapFile::Open (const char *f_path) {
 
     // Checking if last page was incomplete
     if(currentPageNo == totalPages){
-        //cout << "Open currentPageNo == totalPages\n";
+        ////cout << "Open currentPageNo == totalPages\n";
         currentPageNo = --totalPages;
         pageSizesArr->pop_back();
     }
@@ -104,7 +104,7 @@ int HeapFile::Close () {
 
     ofstream configFile (configFile_name.c_str());
     if(!configFile.is_open()) {
-        cout << "Unable to open config file";
+        //cout << "Unable to open config file";
         return 0;
     }
     else {
@@ -114,9 +114,9 @@ int HeapFile::Close () {
         configFile << to_string(currRecordNo) + "\n";
         
         configFile << to_string(currentPageNo) + "\n";
-        //cout << "currPagedNo="<<currentPageNo<<endl;
+        ////cout << "currPagedNo="<<currentPageNo<<endl;
         configFile << to_string(totalPages) + "\n";
-        //cout << "totalPages="<<totalPages<<endl;
+        ////cout << "totalPages="<<totalPages<<endl;
         configFile << pageSizesStr.str() + "\n";
         configFile << to_string(static_cast<int>(prevState)) + "\n";
 
@@ -170,8 +170,8 @@ int HeapFile::GetNext (Record &fetchme) {
     }
 
     if(currRecordNo > totalRecords){
-        //cout << "Get next end of file: currentPgNo = " << currentPageNo << " totalPages = " << totalPages << endl;
-        cout << "[HeapFile][GetNext] Reached end of file\n";
+        ////cout << "Get next end of file: currentPgNo = " << currentPageNo << " totalPages = " << totalPages << endl;
+        //cout << "[HeapFile][GetNext] Reached end of file\n";
         return 0;
     }
 
@@ -183,7 +183,7 @@ int HeapFile::GetNext (Record &fetchme) {
 
         case start:
 
-            cout << "[HeapFile][GetNext] Reached end of file\n";
+            //cout << "[HeapFile][GetNext] Reached end of file\n";
             return 0;
             break;
 
@@ -216,9 +216,9 @@ int HeapFile::GetNext (Record &fetchme) {
 
             // Record was read from the same page, hence just get the next record
             if(currentPageNo == pageNo && !gettingRecordForFirstTime){
-                //cout << "[HeapFile][GetNext1] Getting next record " << currRecordNo << "\n";
+                ////cout << "[HeapFile][GetNext1] Getting next record " << currRecordNo << "\n";
                 rec = myPage.GetNextRecord();
-                //cout << "[HeapFile][GetNext1] Got next record\n";
+                ////cout << "[HeapFile][GetNext1] Got next record\n";
             }
             else{
 
@@ -250,7 +250,7 @@ int HeapFile::GetNext (Record &fetchme, CNF &cnf, Record &literal) {
     int counter = 0;
     do{
         if(GetNext(fetchme)==0){
-            // cout << "total records read = " << counter << endl;
+            // //cout << "total records read = " << counter << endl;
             return 0;
         }
     }

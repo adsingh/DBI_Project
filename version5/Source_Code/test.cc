@@ -47,14 +47,14 @@ extern QueryType queryType;
 
 void printNameList(struct NameList * list){
 	if(list != NULL){
-		cout << list->name << " ";
+		//cout << list->name << " ";
 		printNameList(list->next);
 	}
 }
 
 void printTableList(struct TableList * list){
 	if(list != NULL){
-		cout << "name: " << list->tableName << " Alias: " << list->aliasAs << endl;
+		//cout << "name: " << list->tableName << " Alias: " << list->aliasAs << endl;
 		printTableList(list->next);
 	}
 }
@@ -62,7 +62,7 @@ void printTableList(struct TableList * list){
 void PrintOperand(struct Operand *pOperand){
         if(pOperand!=NULL)
         {
-                cout <<pOperand->value<<" ";
+                //cout <<pOperand->value<<" ";
         }
         else
                 return;
@@ -98,7 +98,7 @@ void PrintOrList(struct OrList *pOr){
 
                 if(pOr->rightOr)
                 {
-                        cout <<" OR ";
+                        //cout <<" OR ";
                         PrintOrList(pOr->rightOr);
                 }
         }
@@ -115,7 +115,7 @@ void PrintAndList(struct AndList *pAnd){
                 PrintOrList(pOr);
                 if(pAnd->rightAnd)
                 {
-                        cout <<" AND ";
+                        //cout <<" AND ";
                         PrintAndList(pAnd->rightAnd);
                 }
         }
@@ -127,29 +127,29 @@ void PrintAndList(struct AndList *pAnd){
 
 void printOperand(struct FuncOperand *operand, int level){
 	if(operand != NULL){
-		cout << "[Operand] Level: " << level << " Code: " << operand->code << " Value: " << operand->value << endl;
+		//cout << "[Operand] Level: " << level << " Code: " << operand->code << " Value: " << operand->value << endl;
 	}
 	else{
-		cout << "[Operand] Level: " << level << "********NULL******\n\n";
+		//cout << "[Operand] Level: " << level << "********NULL******\n\n";
 	}
 }
 
 void printFuncOperator(struct FuncOperator * op, int level){
 	if(op == NULL) {
-		cout << "[Operator] Level: " << level-1 << "********NULL******\n\n";
+		//cout << "[Operator] Level: " << level-1 << "********NULL******\n\n";
 		return;
 	}
 
-	cout << "[Operator] Level: " << level << "\n Operator Code: " << op->code << endl;
+	//cout << "[Operator] Level: " << level << "\n Operator Code: " << op->code << endl;
 
-	cout << "[Operator] Level: " << level << " Left Operator:\n";
+	//cout << "[Operator] Level: " << level << " Left Operator:\n";
 	printFuncOperator(op->leftOperator, level+1);
 
-	cout << "[Operator] Level: " << level << " Left Operand:\n";
+	//cout << "[Operator] Level: " << level << " Left Operand:\n";
 
 	printOperand(op->leftOperand, level);
 
-	cout << "[Operator] Level: " << level << " Right Operator:\n";
+	//cout << "[Operator] Level: " << level << " Right Operator:\n";
 	printFuncOperator(op->right, level+1);
 
 }
@@ -165,176 +165,199 @@ void PrintSchema(Schema* sch);
 // *************************************  MAIN *******************************//
 int main () {
 
-	yyparse();
-
-	// Setup the relations, create relnameToRelptr map
-	setup();
-
-	BigQ::initializeMutex();
-	cout << "[MAIN] Setup Finished\n";
-
-	unordered_map<string, relation*> relnameToRelptr;
-	relation *rel_ptr[] = {n, r, c, p, ps, o, li, s};
-
-	for(int i = 0; i < NUM_RELATIONS; i++){
-		string relName(rel_ptr[i]->name());
-		// cout << "[MAIN] mapping relation : " << relName << endl;
-		relnameToRelptr[relName] = rel_ptr[i];
-	}
-	cout << "[MAIN] created relnameToRelptr\n";
+	int option = 0;
 	
-	switch(queryType){
+	do{
 
-		// QueryType : CREATE
-		case Create:
-		{
-			DBFile dbFile;
-			string relName(tableName);
+		yyparse();
 
-			//Create Schema
-			vector<Attribute> attsVec;
-			while(colsToCreate != NULL){
-				Attribute a;
-				a.name = strdup(colsToCreate->attDetails->name);
-				if(strcmp(colsToCreate->attDetails->type, "INTEGER") == 0){
-					a.myType = Int;
+		// Setup the relations, create relnameToRelptr map
+		setup();
+
+		BigQ::initializeMutex();
+		//cout << "[MAIN] Setup Finished\n";
+
+		unordered_map<string, relation*> relnameToRelptr;
+		relation *rel_ptr[] = {n, r, c, p, ps, o, li, s};
+
+		for(int i = 0; i < NUM_RELATIONS; i++){
+			string relName(rel_ptr[i]->name());
+			// //cout << "[MAIN] mapping relation : " << relName << endl;
+			relnameToRelptr[relName] = rel_ptr[i];
+		}
+		//cout << "[MAIN] created relnameToRelptr\n";
+		
+		switch(queryType){
+
+			// QueryType : CREATE
+			case Create:
+			{
+				DBFile dbFile;
+				string relName(tableName);
+
+				//Create Schema
+				vector<Attribute> attsVec;
+				while(colsToCreate != NULL){
+					Attribute a;
+					a.name = strdup(colsToCreate->attDetails->name);
+					if(strcmp(colsToCreate->attDetails->type, "INTEGER") == 0){
+						a.myType = Int;
+					}
+					else if(strcmp(colsToCreate->attDetails->type, "DOUBLE") == 0){
+						a.myType = Double;
+					}
+					else if(strcmp(colsToCreate->attDetails->type, "STRING") == 0){
+						a.myType = String;
+					}
+					else{
+						//cout << "Invalid Attribute type... exiting application\n";
+						exit(1);
+					}
+					attsVec.push_back(a);
+					colsToCreate = colsToCreate->next;
 				}
-				else if(strcmp(colsToCreate->attDetails->type, "DOUBLE") == 0){
-					a.myType = Double;
+				
+				Attribute* atts = new Attribute[attsVec.size()];
+				int index = 0;
+				for(Attribute a: attsVec){
+					atts[index++] = a;
 				}
-				else if(strcmp(colsToCreate->attDetails->type, "STRING") == 0){
-					a.myType = String;
+				
+				Schema* relSchema = new Schema((char*) relName.c_str(), attsVec.size(), atts);
+				//cout << "[MAIN][CREATE] created schema for relation: " << relName << "\n";
+				PrintSchema(relSchema);
+
+				if(strcmp(dbFileType, "HEAP") == 0){
+					dbFile.Create(relnameToRelptr[relName]->path(), heap, NULL);
+				}
+				else if(strcmp(dbFileType, "SORTED")==0){
+					// Create OrderMaker
+					OrderMaker *orderMaker = new OrderMaker(relSchema);
+					struct {OrderMaker *o; int l;} startup = {orderMaker , 10};
+					dbFile.Create(relnameToRelptr[relName]->path(), sorted, &startup);
 				}
 				else{
-					cout << "Invalid Attribute type... exiting application\n";
+					//cout << "Invalid DBFile type... exiting application\n";
 					exit(1);
 				}
-				attsVec.push_back(a);
-				colsToCreate = colsToCreate->next;
+
+				dbFile.Close();
+				break;
+			}
+			// QueryType : INSERT
+			case Insert:
+			{
+				DBFile dbFile;
+				string relName(tableName);
+				//cout << "[MAIN][INSERT] Opening file from path: " << relnameToRelptr[relName]->path() << endl;
+				dbFile.Open(relnameToRelptr[relName]->path());
+
+				char tbl_path[100]; // construct path of the tpch flat text file
+				sprintf (tbl_path, "%s%s.tbl", tpch_dir, tableName); 
+				//cout << " tpch file will be loaded from " << tbl_path << endl;
+
+				dbFile.Load (*relnameToRelptr[relName]->schema(), tbl_path);	
+				dbFile.Close();
+				break;
 			}
 			
-			Attribute* atts = new Attribute[attsVec.size()];
-			int index = 0;
-			for(Attribute a: attsVec){
-				atts[index++] = a;
-			}
-			
-			Schema* relSchema = new Schema((char*) relName.c_str(), attsVec.size(), atts);
-			cout << "[MAIN][CREATE] created schema for relation: " << relName << "\n";
-			PrintSchema(relSchema);
-
-			if(strcmp(dbFileType, "HEAP") == 0){
-				dbFile.Create(relnameToRelptr[relName]->path(), heap, NULL);
-			}
-			else if(strcmp(dbFileType, "SORTED")==0){
-				// Create OrderMaker
-				OrderMaker *orderMaker = new OrderMaker(relSchema);
-				struct {OrderMaker *o; int l;} startup = {orderMaker , 10};
-				dbFile.Create(relnameToRelptr[relName]->path(), sorted, &startup);
-			}
-			else{
-				cout << "Invalid DBFile type... exiting application\n";
-				exit(1);
-			}
-
-			dbFile.Close();
-			break;
-		}
-		// QueryType : INSERT
-		case Insert:
-		{
-			DBFile dbFile;
-			string relName(tableName);
-			cout << "[MAIN][INSERT] Opening file from path: " << relnameToRelptr[relName]->path() << endl;
-			dbFile.Open(relnameToRelptr[relName]->path());
-
-			char tbl_path[100]; // construct path of the tpch flat text file
-			sprintf (tbl_path, "%s%s.tbl", tpch_dir, tableName); 
-			cout << " tpch file will be loaded from " << tbl_path << endl;
-
-			dbFile.Load (*relnameToRelptr[relName]->schema(), tbl_path);	
-			dbFile.Close();
-			break;
-		}
-		
-		// QueryType : SELECT
-		case Select:
-		{
-			//Check if outputType is NULL, set some default
-			ifstream outputCfg("OutPutCfg.txt");
-			string outputTypeStr;
-			if(outputCfg.is_open()){
-				cout << "[MAIN][SELECT] Reading outputType\n";
-				getline(outputCfg, outputTypeStr);
-				outputType = strdup(outputTypeStr.c_str());
-			}
-			else{
-				cout << "[MAIN][SELECT] Setting default outputType\n";
-				outputType = strdup("STDOUT");
-			}
-
-			QueryPlanNode* queryPlan =  CreateQueryPlan();
-			QueryPlanNode::createPipes();
-			QueryPlanNode* node = queryPlan;
-			QueryPlanNode* lastNode;
-
-			if(strcmp(outputType, "NONE") == 0){
-				while(node != NULL){
-					node->Print();
-					node = node->next;
-				}
-			}
-			else{
-				while(node != NULL){
-					// node->Print();
-					node->Run();
-					if(node->next == NULL)
-						lastNode = node;
-					node = node->next;
-				}
-				node = queryPlan;
-				// decide the ostream
-				streambuf * buf;
-				ofstream of;
-				if(strcmp(outputType, "STDOUT") == 0){
-					buf = cout.rdbuf();
+			// QueryType : SELECT
+			case Select:
+			{
+				//Check if outputType is NULL, set some default
+				ifstream outputCfg("OutPutCfg.txt");
+				string outputTypeStr;
+				if(outputCfg.is_open()){
+					//cout << "[MAIN][SELECT] Reading outputType\n";
+					getline(outputCfg, outputTypeStr);
+					outputType = strdup(outputTypeStr.c_str());
 				}
 				else{
-
-					of.open(string(outputTypeStr));
-					buf = of.rdbuf();
+					//cout << "[MAIN][SELECT] Setting default outputType\n";
+					outputType = strdup("STDOUT");
 				}
-				ostream out(buf);
 
-				QueryPlanNode::clear_pipe(lastNode, true, out);
-				while(node != NULL){
-					node->WaitUntilDone();
-					node = node->next;
+				QueryPlanNode* queryPlan =  CreateQueryPlan();
+				QueryPlanNode::createPipes();
+				QueryPlanNode* node = queryPlan;
+				QueryPlanNode* lastNode;
+
+				if(strcmp(outputType, "NONE") == 0){
+					while(node != NULL){
+						node->Print();
+						node = node->next;
+					}
 				}
+				else{
+					while(node != NULL){
+						// node->Print();
+						node->Run();
+						if(node->next == NULL)
+							lastNode = node;
+						node = node->next;
+					}
+					node = queryPlan;
+					// decide the ostream
+					streambuf * buf;
+					ofstream of;
+					if(strcmp(outputType, "STDOUT") == 0){
+						buf = cout.rdbuf();
+					}
+					else{
+
+						of.open(string(outputTypeStr));
+						buf = of.rdbuf();
+					}
+					ostream out(buf);
+
+					QueryPlanNode::clear_pipe(lastNode, true, out);
+					while(node != NULL){
+						node->WaitUntilDone();
+						node = node->next;
+					}
+				}
+				break;
 			}
-			break;
+
+			// QueryType : DROP
+			case Drop:
+			{
+
+				//cout << "[MAIN][DROP] dropping table : " << tableName << endl;
+				remove((string(tableName)+ ".bin").c_str());
+				remove((string(tableName)+ ".bin_config.txt").c_str());
+				break;
+			}
+
+			case SetOutput:
+			{
+				ofstream outputCfg;
+				outputCfg.open("OutPutCfg.txt");
+				outputCfg << outputType;
+				outputCfg.close();
+
+				break;
+			}
+		};
+
+		cout << "\n\nDo you want to continue ? \n";
+		cout << "Press 1. for Yes\n\t2. for No\n";
+		cin >> option;
+		while(option != 1 || option != 2){
+			
+			cout << "Invalid option ......\nPress 1. for Yes\n\t2. for No\n";
+			cin.clear();
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			cin >> option;
 		}
-
-		// QueryType : DROP
-		case Drop:
-		{
-
-			cout << "[MAIN][DROP] dropping table : " << tableName << endl;
-			remove((string(tableName)+ ".bin").c_str());
-			remove((string(tableName)+ ".bin_config.txt").c_str());
-			break;
-		}
-
-		case SetOutput:
-		{
-			ofstream outputCfg;
-			outputCfg.open("OutPutCfg.txt");
-			outputCfg << outputType;
-			outputCfg.close();
-
-			break;
-		}
-	};
+		
+		// if(!cin){
+		// 	cin.clear();
+		// 	cin.ignore(numeric_limits<streamsize>::max(), '\n');
+		// 	cin >> option;
+		// }
+		//cout << endl;
+	} while(option == 1);
 	
 }
 
@@ -376,14 +399,14 @@ void modifySchemaAttsNames(Schema** sch, string aliasAs){
 		attsRes[i].myType = atts[i].myType;
 		attsRes[i].name = new char[temp.length() + 1];
 		strcpy(attsRes[i].name, temp.c_str());
-		//cout <<  " ********* : "<< attsRes[i].name << "  " << attsRes[i].myType << endl;
+		////cout <<  " ********* : "<< attsRes[i].name << "  " << attsRes[i].myType << endl;
 	}
 	*sch = new Schema("schema", numAtts, attsRes);
 }
 
 void PrintSchema(Schema* sch){
 	if(sch == NULL){
-		cout << "Schema is empty\n";
+		//cout << "Schema is empty\n";
 		return;
 	}
 	int numAtts = sch->GetNumAtts();
@@ -391,7 +414,7 @@ void PrintSchema(Schema* sch){
 
 	for(int i = 0 ; i < numAtts; i++){
 		// string attName(atts[i].name);
-		cout << attsRes[i].name <<  " : " << attsRes[i].myType << endl;
+		//cout << attsRes[i].name <<  " : " << attsRes[i].myType << endl;
 	}
 }
 
@@ -421,7 +444,7 @@ QueryPlanNode* CreateQueryPlan(){
 		tables = tables->next;
 	}
 
-	// cout << "[test.cc] Created Schema Map\n";
+	// //cout << "[test.cc] Created Schema Map\n";
 	
 	set<string> tblNameSet; 
 	string relation1;
@@ -491,10 +514,10 @@ QueryPlanNode* CreateQueryPlan(){
 	int pipeID = 1;
 	unordered_map<string, int> aliasToPipeID;
 
-	// cout << "[test.cc] Created SF and Join CNF Maps\n";
+	// //cout << "[test.cc] Created SF and Join CNF Maps\n";
 
 	for(pair<string, vector<orList*>> entry : sf_cnf_map){
-		// cout << "vector size: " << entry.second.size() << endl;
+		// //cout << "vector size: " << entry.second.size() << endl;
 		int index = 0;
 
 		sfAndList = new AndList();
@@ -510,13 +533,13 @@ QueryPlanNode* CreateQueryPlan(){
 		// sfAndList->rightAnd;
 
 		// PrintAndList(sfAndList->rightAnd);
-		cout << endl;
+		//cout << endl;
 
 		// Create CNF here
 		cnf = new CNF();
 		literal = new Record();
 		if(aliasToSchema.find(entry.first) == aliasToSchema.end()){
-			cout << "Schema not present for the relation : " << entry.first << endl;
+			//cout << "Schema not present for the relation : " << entry.first << endl;
 			exit(1);
 		}
 
@@ -535,7 +558,7 @@ QueryPlanNode* CreateQueryPlan(){
 
 	}
 
-	// cout << "[test.cc] Created SF Nodes\n";
+	// //cout << "[test.cc] Created SF Nodes\n";
 	
 	// Create And Lists for joins
 	AndList *jAndList;
@@ -571,7 +594,7 @@ QueryPlanNode* CreateQueryPlan(){
 			// Create ANDLIST
 			// char* name = (char*)alias1.c_str();
 			char* name = aliasToSchema[alias1]->GetAtts()[0].name;
-			// cout << "[test.cc] jugaad char name = " << name << endl;
+			// //cout << "[test.cc] jugaad char name = " << name << endl;
 			sfAndList = nameToAndList(name);
 			// PrintAndList(sfAndList);
 			cnf->GrowFromParseTree(sfAndList, aliasToSchema[alias1], *literal);
@@ -657,7 +680,7 @@ QueryPlanNode* CreateQueryPlan(){
 				rel_name[index] = new char[item2.length()+1];
 				strcpy(rel_name[index++], item2.c_str());
 			}
-			//cout << "[test.cc] Calling Estimate for index = " << index << endl;
+			////cout << "[test.cc] Calling Estimate for index = " << index << endl;
 			int estimate = s.Estimate(join_cnf_map[entry.first], rel_name, index);
 			
 			if(estimate < bestEstimate) {
@@ -853,7 +876,7 @@ QueryPlanNode* CreateQueryPlan(){
 		currentNode = currentNode->next;
 		//currentNode->Print();
 		
-		// cout << "[test.cc] Created Group By Node\n";
+		// //cout << "[test.cc] Created Group By Node\n";
     }
 	// Sum  ------------- Pipe &inPipe, Pipe &outPipe, Function &computeMe
 	// inPipe -- From the previous operation in the order of the operations
@@ -873,7 +896,7 @@ QueryPlanNode* CreateQueryPlan(){
 		currentNode = currentNode->next;
 		//currentNode->Print();
 		
-		// cout << "[test.cc] Created SUM Node\n";
+		// //cout << "[test.cc] Created SUM Node\n";
 
 	} 
 	// PrintSchema(currentNode->outSchema);
@@ -891,7 +914,7 @@ QueryPlanNode* CreateQueryPlan(){
 		while(attsToSelect != NULL){
 			int pos = currentNode->outSchema->Find(attsToSelect->name);
 			if(pos == -1){
-				cout << "Not found the ATTS: " << attsToSelect->name << endl;
+				//cout << "Not found the ATTS: " << attsToSelect->name << endl;
 				exit(1);
 			}
 			attsToSelectNames.push_back(attsToSelect->name);
@@ -930,7 +953,7 @@ QueryPlanNode* CreateQueryPlan(){
 		currentNode->next = NULL;
 		//currentNode->Print();
 
-		// cout << "[test.cc] Created Projection Node\n";	
+		// //cout << "[test.cc] Created Projection Node\n";	
 	}
 
 	// Duplicate removal ----------- Pipe &inPipe, Pipe &outPipe, Schema &mySchema
@@ -940,7 +963,7 @@ QueryPlanNode* CreateQueryPlan(){
 		currentNode = currentNode->next;
 		//currentNode->Print();
 		
-		// cout << "[test.cc] Created Duplicate removal Node\n";
+		// //cout << "[test.cc] Created Duplicate removal Node\n";
 	}
 
 	return dummyQueryPlanNode->next;

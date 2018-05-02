@@ -3,7 +3,7 @@
 
 void QueryPlanNode::PrintSchema(Schema *sch){
 	if(sch == NULL){
-		cout << "Schema is empty\n";
+		//cout << "Schema is empty\n";
 		return;
 	}
 	int numAtts = sch->GetNumAtts();
@@ -11,7 +11,7 @@ void QueryPlanNode::PrintSchema(Schema *sch){
 
 	for(int i = 0 ; i < numAtts; i++){
 		// string attName(atts[i].name);
-		cout << attsRes[i].name <<  " : " << attsRes[i].myType << endl;
+		//cout << attsRes[i].name <<  " : " << attsRes[i].myType << endl;
 	}
 }
 
@@ -60,19 +60,19 @@ SelectFileNode::SelectFileNode (char* fileName, int outPipeID, Schema *outSchema
 }
 
 void SelectFileNode::Print () {
-	cout << "SelectFile Operation Input Filename " << fileName << " Output Pipe ID " << 
-            outPipeID << endl << " \nOutput Schema: \n";
+	//cout << "SelectFile Operation Input Filename " << fileName << " Output Pipe ID " << 
+          //  outPipeID << endl << " \nOutput Schema: \n";
     PrintSchema(outSchema);
-    cout << "\nSelect File CNF:\n";
+    //cout << "\nSelect File CNF:\n";
     selOp->Print();
-    cout << "===============================================" << endl;
+    //cout << "===============================================" << endl;
 }
 
 void SelectFileNode::Run(){
     
-    cout << "[SFNODE Run] Calling DBFile Open\n";
+    //cout << "[SFNODE Run] Calling DBFile Open\n";
     dbFile.Open(fileName);
-    cout << "[SFNODE Run] Calling SF RUN\n";
+    //cout << "[SFNODE Run] Calling SF RUN\n";
     SF.Use_n_Pages(1);
     SF.Run(dbFile, *(*QueryPlanNode::pipesVector)[outPipeID-1], *selOp, *literal);
 	
@@ -85,9 +85,9 @@ void SelectFileNode::WaitUntilDone(){
     // }
     
     SF.WaitUntilDone();
-    // cout << "Finished selection for " << fileName << endl;
+    // //cout << "Finished selection for " << fileName << endl;
     // if(next == NULL){
-    //     cout << " query returned " << cnt << " records\n";
+    //     //cout << " query returned " << cnt << " records\n";
     // }
     dbFile.Close();
 }
@@ -101,12 +101,12 @@ SelectPipeNode::SelectPipeNode (int inPipeID, int outPipeID, Schema *outSchema, 
 }
 
 void SelectPipeNode::Print () {
-	cout << "SelectPipe Operation Input PipeID " << inPipeID << " Output Pipe ID " << 
-            outPipeID << endl << " \nOutput Schema: \n";
+	//cout << "SelectPipe Operation Input PipeID " << inPipeID << " Output Pipe ID " << 
+         //   outPipeID << endl << " \nOutput Schema: \n";
     PrintSchema(outSchema);
-    cout << "\nSelect File CNF:\n";
+    //cout << "\nSelect File CNF:\n";
     selOp->Print();
-    cout << "===============================================" << endl;
+    //cout << "===============================================" << endl;
 }
 
 void SelectPipeNode::Run(){
@@ -120,7 +120,7 @@ void SelectPipeNode::WaitUntilDone(){
     // }
     SP.WaitUntilDone();
     // if(next == NULL){
-    //     cout << " query returned " << cnt << " records\n";
+    //     //cout << " query returned " << cnt << " records\n";
     // }
 }
 
@@ -134,15 +134,15 @@ ProjectNode::ProjectNode (int inPipeID, int outPipeID, Schema *outSchema, int *k
 }
 
 void ProjectNode::Print () {
-	cout << "Project Operation Input PipeID " << inPipeID << " Output Pipe ID " << 
-            outPipeID << endl << " \nOutput Schema: \n";
+	//cout << "Project Operation Input PipeID " << inPipeID << " Output Pipe ID " << 
+          //  outPipeID << endl << " \nOutput Schema: \n";
     PrintSchema(outSchema);
-    cout << "\nAttributes to keep:\n";
+    //cout << "\nAttributes to keep:\n";
     for(int i = 0 ; i < numAttsOutput; i++){
-        cout << keepMe[i] << " ";
+        //cout << keepMe[i] << " ";
     }
-    cout << endl;
-    cout << "===============================================" << endl;
+    //cout << endl;
+    //cout << "===============================================" << endl;
 }
 
 void ProjectNode::Run(){
@@ -156,12 +156,12 @@ void ProjectNode::WaitUntilDone(){
 
     // int cnt;
     // if(next == NULL){
-    //     cout << "****************** WILL PRINT PROJECTS OUTPUT ***************\n";
+    //     //cout << "****************** WILL PRINT PROJECTS OUTPUT ***************\n";
     //     cnt = clear_pipe(*(*QueryPlanNode::pipesVector)[outPipeID-1], outSchema, false);
     // }
     P.WaitUntilDone();
     // if(next == NULL){
-    //     cout << " query returned " << cnt << " records\n";
+    //     //cout << " query returned " << cnt << " records\n";
     // }
 }
 
@@ -175,13 +175,13 @@ JoinNode::JoinNode (int inPipe1ID, int inPipe2ID, int outPipeID, Schema *outSche
 }
 
 void JoinNode::Print () {
-	cout << "Join Operation Input PipeID1 = " << inPipe1ID 
-         << " Input PipeID2 = " << inPipe2ID  << " Output Pipe ID = " << 
-            outPipeID  << "\n\nOutput Schema: \n";
+	//cout << "Join Operation Input PipeID1 = " << inPipe1ID 
+        // << " Input PipeID2 = " << inPipe2ID  << " Output Pipe ID = " << 
+          //  outPipeID  << "\n\nOutput Schema: \n";
     PrintSchema(outSchema);
-    cout << "\nJoin CNF:\n";
+    //cout << "\nJoin CNF:\n";
     selOp->Print();
-    cout << "===============================================" << endl;
+    //cout << "===============================================" << endl;
 }
 
 void JoinNode::Run(){
@@ -205,10 +205,10 @@ DuplicateRemovalNode::DuplicateRemovalNode (int inPipeID, int outPipeID, Schema 
 }
 
 void DuplicateRemovalNode::Print () {
-	cout << "Duplicate removal Operation Input PipeID = " << inPipeID 
-         << " Output Pipe ID = " << outPipeID  << "\n\nOutput Schema: \n";
+	//cout << "Duplicate removal Operation Input PipeID = " << inPipeID 
+       //  << " Output Pipe ID = " << outPipeID  << "\n\nOutput Schema: \n";
     PrintSchema(outSchema);
-    cout << "===============================================" << endl;
+    //cout << "===============================================" << endl;
 }
 
 void DuplicateRemovalNode::Run(){
@@ -225,7 +225,7 @@ void DuplicateRemovalNode::WaitUntilDone(){
     // }
     D.WaitUntilDone();
     // if(next == NULL){
-    //     cout << " query returned " << cnt << " records\n";
+    //     //cout << " query returned " << cnt << " records\n";
     // }
 }
 
@@ -238,12 +238,12 @@ SumNode::SumNode (int inPipeID, int outPipeID, Schema *outSchema,  Function *com
 }
 
 void SumNode::Print () {
-	cout << "Sum Operation Input PipeID = " << inPipeID 
-         << " Output Pipe ID = " << outPipeID  << "\n\nOutput Schema: \n";
+	//cout << "Sum Operation Input PipeID = " << inPipeID 
+        // << " Output Pipe ID = " << outPipeID  << "\n\nOutput Schema: \n";
     PrintSchema(outSchema);
-    cout << "\nSum Function:\n";
+    //cout << "\nSum Function:\n";
     computeMe->Print();
-    cout << "===============================================" << endl;
+    //cout << "===============================================" << endl;
 }
 
 void SumNode::Run(){
@@ -259,7 +259,7 @@ void SumNode::WaitUntilDone(){
     // }
     S.WaitUntilDone();
     // if(next == NULL){
-    //     cout << " query returned " << cnt << " records\n";
+    //     //cout << " query returned " << cnt << " records\n";
     // }
 }
 
@@ -273,14 +273,14 @@ GroupByNode::GroupByNode (int inPipeID, int outPipeID, Schema *outSchema,  Order
 }
 
 void GroupByNode::Print () {
-	cout << "Group By Operation Input PipeID = " << inPipeID 
-         << " Output Pipe ID = " << outPipeID  << "\n\nOutput Schema: \n";
+	//cout << "Group By Operation Input PipeID = " << inPipeID 
+       //  << " Output Pipe ID = " << outPipeID  << "\n\nOutput Schema: \n";
     PrintSchema(outSchema);
-    cout << "\nGroupBy Ordermaker:\n";
+    //cout << "\nGroupBy Ordermaker:\n";
     groupAtts->Print();
-    cout << "\nAggregate Function:\n";
+    //cout << "\nAggregate Function:\n";
     computeMe->Print();
-    cout << "===============================================" << endl;
+    //cout << "===============================================" << endl;
 }
 
 void GroupByNode::Run(){
@@ -297,6 +297,6 @@ void GroupByNode::WaitUntilDone(){
     // }
     G.WaitUntilDone();
     // if(next == NULL){
-    //     cout << " query returned " << cnt << " records\n";
+    //     //cout << " query returned " << cnt << " records\n";
     // }
 }

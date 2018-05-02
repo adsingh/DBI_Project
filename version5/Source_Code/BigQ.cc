@@ -47,7 +47,7 @@ void *BigQ :: externalSortWorker(void* args){
 	
 	thread_data* worker_args = (thread_data *) args;
 	if(worker_args->runlen <= 0){
-		cout << "Invalid runlength, using default value of 1\n";
+		//cout << "Invalid runlength, using default value of 1\n";
 		worker_args->runlen = 1;
 	}
 	
@@ -169,8 +169,8 @@ void *BigQ :: externalSortWorker(void* args){
 
 	}
 
-	cout << "[BigQ.cc][worker"<< worker_args->filename << "] Records read from the pipe = " << recordCount << endl;	
-	// cout << "[BigQ.cc][worker"<< worker_args->filename << "] Number of runs = " << numberOfRuns << endl;
+	//cout << "[BigQ.cc][worker"<< worker_args->filename << "] Records read from the pipe = " << recordCount << endl;	
+	// //cout << "[BigQ.cc][worker"<< worker_args->filename << "] Number of runs = " << numberOfRuns << endl;
 
 	Page* pageArr[numberOfRuns];
 	int activePages[numberOfRuns];
@@ -224,7 +224,7 @@ void *BigQ :: externalSortWorker(void* args){
 	for(int i = 0 ; i < numberOfRuns ; i++)
 		delete pageArr[i];
 	
-	cout << "[BigQ.cc][worker"<< worker_args->filename << "] Number of records read from the temp file = " << recordCount << endl;
+	//cout << "[BigQ.cc][worker"<< worker_args->filename << "] Number of records read from the temp file = " << recordCount << endl;
 }
 
 BigQ::~BigQ () {

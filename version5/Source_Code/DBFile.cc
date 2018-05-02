@@ -55,7 +55,7 @@ int DBFile::Create (const char *f_path, fType f_type, void *startup) {
             break;
 
         default:
-            cout << "Invalid file type\n";
+            //cout << "Invalid file type\n";
             exit(1);
 
     }
@@ -71,7 +71,7 @@ void DBFile::Load (Schema &f_schema, const char *loadpath) {
 } 
 
 int DBFile::Open (const char *f_path) {
-    cout << "[DBFile][Open] Start" << endl; 
+    //cout << "[DBFile][Open] Start" << endl; 
     configFile_name = GetFileName(f_path);
     
     // Reading Data from Auxiliary File
@@ -79,7 +79,7 @@ int DBFile::Open (const char *f_path) {
     string fileType;
     ifstream configFile (configFile_name.c_str());
     if(!configFile.is_open()) {
-        cout << "Unable to open auxiliary file" << endl;
+        //cout << "Unable to open auxiliary file" << endl;
         return 0;
     } 
     else {
@@ -163,10 +163,10 @@ int DBFile::Open (const char *f_path) {
     configFile.close();
 
     if(myInternalVar == NULL) {
-        cout << "[DBFile.cc] myInternalVar NOT initialized\n" ;
+        //cout << "[DBFile.cc] myInternalVar NOT initialized\n" ;
         return 0;
     }
-    cout << "[DBFile][Open] End" << endl;
+    //cout << "[DBFile][Open] End" << endl;
     return myInternalVar->Open(f_path);
 }
 
